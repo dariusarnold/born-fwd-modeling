@@ -1,0 +1,75 @@
+import numpy as np
+from typing import Tuple, Sequence
+
+import scipy.spatial
+
+
+class Vector3D:
+    """General 3D vector that can be used with numpy operations but makes code
+    using it easier to read because it allows attribute access to the xyz
+    components."""
+
+    def __init__(self, x: float, y: float, z: float):
+        self.data = (x, y, z)
+
+    # implement to support numpy operations on this class
+    def __array__(self) ->Tuple[float, float, float]:
+        return np.asarray(self.data)
+
+    @property
+    def x(self) -> float:
+        return self.data[0]
+
+    @property
+    def y(self) -> float:
+        return self.data[1]
+
+    @property
+    def z(self) -> float:
+        return self.data[2]
+
+    # implement len and getitem for the conversion of a sequence of Vector3Ds
+    # to a nested numpy array to work
+    def __len__(self) -> int:
+        return 3
+
+    def __getitem__(self, item: int) -> float:
+        return self.data[item]
+
+
+class VelocityModel:
+    """
+    Velocity model with a homogeneous background velocity that represents fractures
+    as a collection of close scatterer points with a circular velocity heterogenity
+    around them.
+    """
+
+    def __init__(self, background_velocity: float, fracture_velocity: float,
+                 x_width: float, y_width: float,
+                 scatterer_positions: Sequence[Vector3D], scatterer_radius: float):
+        """
+        Create new model
+        :param background_velocity: unit m/s
+        :param fracture_velocity: unit m/s
+        :param x_width: unit m
+        :param y_width: unit m
+        :param scatterer_positions: All scatterer points in the model. A scatterer is a point in the
+        model around which there is a velocity anomaly
+        :param scatterer_radius: Radius of the velocity anomaly around a scatterer, unit m
+        """
+        self.bg_vel = background_velocity
+        self.frac_vel = fracture_velocity
+        self.x_width = x_width
+        self.y_width = y_width
+        self.scatterer_tree = scipy.spatial.KDTree(scatterer_positions)
+        self.scatterer_positions = scatterer_positions
+        self.scatterer_radius = scatterer_radius
+
+    def eval_at(self, position: Vector3D) -> float:
+        """Get velocity at position in the model"""
+        # check if the position lies within the radius of a scatterer
+        scatterer_indices = self.scatterer_tree.query_ball_point(position, self.scatterer_radius)
+        if scatterer_indices:
+            return self.frac_vel
+        else:
+            return self.bg_vel
