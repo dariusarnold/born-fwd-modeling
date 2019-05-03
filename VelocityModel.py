@@ -13,7 +13,7 @@ class Vector3D:
         self.data = (x, y, z)
 
     # implement to support numpy operations on this class
-    def __array__(self) ->Tuple[float, float, float]:
+    def __array__(self) ->np.array:
         return np.asarray(self.data)
 
     @property
