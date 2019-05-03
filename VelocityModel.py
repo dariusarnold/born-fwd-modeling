@@ -39,6 +39,10 @@ class Vector3D:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.x}, {self.y}, {self.z})"
 
+    def __sub__(self, other):
+        """Implement subtraction operator"""
+        return Vector3D(self.x-other.x, self.y-other.y, self.z-other.z)
+
 
 class VelocityModel:
     """
