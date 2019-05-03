@@ -1,9 +1,11 @@
 import itertools
+import math
 
 import numpy as np
 
 from VelocityModel import VelocityModel, Vector3D
 import matplotlib.pyplot as plt
+from functions import born_modeling
 
 
 def create_scatterers():
@@ -60,7 +62,13 @@ def main():
 
     #plot_fractures(model)
 
-    
+    xs = Vector3D(model.x_width, model.y_width/2, 10.)
+    xr = Vector3D(5272., 3090., 0.)
+    f_central = 30  # hz
+    f = 10  # hz
+    density = 2550
+    res = born_modeling(xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
+    print(res)
 
 
 if __name__ == '__main__':
