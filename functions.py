@@ -83,14 +83,21 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, w_central: float, de
         x_prime = Vector3D(x, y, z)
         return G0(xs, x_prime, omega) * epsilon(velocity_model.eval_at(x_prime)) * G0(x_prime, xr, omega)
 
+    # scipy cant integrate complex functions, so we split integration into real
+    # and imaginary part
     def real_func(z, y, x):
         return scipy.real(integral(z, y, x))
 
-    def imag_func(x):
-        return scipy.imag(integral(x))
+    def imag_func(z, y, x):
+        return scipy.imag(integral(z, y, x))
 
-    
-    y, abserr = W(w) * w**2 * integrate.tplquad(real_func, x_start, x_end,
-                                                lambda x: y_start, lambda x: y_end,
-                                                lambda x, y: z_start, lambda x, y: z_end)
-    return y
+    y_real, abserr_real = integrate.tplquad(real_func, x_start, x_end,
+                                  y_start, y_end,
+                                  z_start, z_end)
+    y_imag, abserr_imag = integrate.tplquad(imag_func, x_start, x_end,
+                                            y_start, y_end,
+                                            z_start, z_end)
+
+    y_real *= W(omega) * omega ** 2
+    y_imag *= W(omega) * omega ** 2
+    return complex(y_real, y_imag)
