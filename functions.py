@@ -8,6 +8,8 @@ from scipy import integrate
 
 from VelocityModel import Vector3D, VelocityModel
 
+import fastfunctions
+
 
 def ricker_frequency_domain(omega: float, omega_central: float) -> float:
     """
@@ -59,12 +61,13 @@ def integral(z: float, y: float, x:float, additional_params:Tuple):
     x_prime = Vector3D(x, y, z)
     density, v0, omega, velocity_model, xs, xr = additional_params
     v = velocity_model.eval_at(x_prime)
-    epsilon = scattering_potential(v, v0)
+    # could check if v == background_vel and return 0 if true
+    epsilon = fastfunctions.scattering_potential(v, v0)
     # since the product contains a zero dont compute other functions to save operations
     if epsilon == 0:
         return 0.
-    G0_left = greens_function(density, v0, xs, x_prime, omega)
-    G0_right = greens_function(density, v0, x_prime, xr, omega)
+    G0_left = fastfunctions.greens_function(density, v0, xs, x_prime, omega)
+    G0_right = fastfunctions.greens_function(density, v0, x_prime, xr, omega)
     return G0_left * epsilon * G0_right
 
 
@@ -106,6 +109,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
                                             z_start, z_end,
                                             args=(density, v0, omega, velocity_model, xs, xr))
 
-    y_real *= ricker_frequency_domain(omega, omega_central) * omega**2
-    y_imag *= ricker_frequency_domain(omega, omega_central) * omega**2
+    factor = fastfunctions.ricker_frequency_domain(omega, omega_central) * omega**2
+    y_real *= factor
+    y_imag *= factor
     return complex(y_real, y_imag)
