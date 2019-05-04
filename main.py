@@ -88,7 +88,11 @@ def main():
             f = fut_freq_mapping[future]
             p_wave_spectrum.append((f, res))
 
-    pprint(sorted(p_wave_spectrum, key=lambda x: x[0]))
+    p_wave_spectrum = sorted(p_wave_spectrum, key=lambda x: x[0])
+    freq_domain = np.array([amplitude for freq, amplitude in p_wave_spectrum])
+    time_domain = np.fft.ifft(freq_domain)
+    plt.plot(time_domain)
+    plt.show()
 
 
 if __name__ == '__main__':
