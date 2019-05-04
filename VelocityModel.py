@@ -77,7 +77,7 @@ class VelocityModel:
     def eval_at(self, position: Vector3D) -> float:
         """Get velocity at position in the model"""
         # check if the position lies within the radius of a scatterer
-        scatterer_indices = self.scatterer_tree.query_ball_point(np.asarray(position), self.scatterer_radius)
+        scatterer_indices = self.scatterer_tree.query_ball_point(position.data, self.scatterer_radius)
         if scatterer_indices:
             return self.frac_vel
         else:
