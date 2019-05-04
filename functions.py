@@ -52,8 +52,9 @@ def greens_function(density: float, v0: float, x: Vector3D, x_prime: Vector3D,
     :return:
     """
     # split formula for better readability
-    a = 1. / (4 * math.pi * density * v0**2 * length(x - x_prime))
-    b = cmath.exp(-1j * omega * length(x - x_prime) / v0)
+    l = length(x - x_prime)
+    a = 1. / (4. * math.pi * density * v0**2 * l)
+    b = cmath.exp(-1j * omega * l / v0)
     return a * b
 
 
