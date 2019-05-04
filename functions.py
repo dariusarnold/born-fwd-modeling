@@ -16,7 +16,7 @@ def ricker_frequency_domain(omega: float, omega_central: float) -> float:
     :param omega_central: Central or dominant frequency
     :return: Value of frequency spectrum of a Ricker wavelet
     """
-    return 2 * omega ** 2 / (math.sqrt(math.pi) * omega_central ** 3) * math.exp(- omega ** 2 / omega_central ** 2)
+    return 2 * omega**2 / (math.sqrt(math.pi) * omega_central**3) * math.exp(- omega**2 / omega_central**2)
 
 
 def scattering_potential(v: float, v0: float) -> float:
@@ -27,7 +27,7 @@ def scattering_potential(v: float, v0: float) -> float:
     :param v0: homogeneous background velocity
     :return:
     """
-    return 1 / v0**2 - 1/v**2
+    return 1 / v0**2 - 1 / v**2
 
 
 def length(vector: Vector3D) -> float:
@@ -50,7 +50,7 @@ def greens_function(density: float, v0: float, x: Vector3D, x_prime: Vector3D,
     :return:
     """
     # split formula for better readability
-    a = 1 / (4*math.pi * density * v0**2 * length(x - x_prime))
+    a = 1. / (4 * math.pi * density * v0**2 * length(x - x_prime))
     b = cmath.exp(-1j * omega * length(x - x_prime) / v0)
     return a * b
 
