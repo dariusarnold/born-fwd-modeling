@@ -1,10 +1,11 @@
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import itertools
 import math
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from VelocityModel import VelocityModel, Vector3D
-import matplotlib.pyplot as plt
 from functions import born_modeling
 
 
@@ -39,7 +40,7 @@ def create_velocity_model():
     x_width = 11200
     y_width = 11200
     scatterer_positions = create_scatterers()
-    scatterer_radius = 1
+    scatterer_radius = 100
     return VelocityModel(background_vel, fracture_vel, x_width, y_width, scatterer_positions, scatterer_radius)
 
 
@@ -65,10 +66,18 @@ def main():
     xs = Vector3D(model.x_width, model.y_width/2, 10.)
     xr = Vector3D(5272., 3090., 0.)
     f_central = 30  # hz
-    f = 10  # hz
+    frequency_sample_points = np.linspace(1, 100, 16)  # hz
     density = 2550
-    res = born_modeling(xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
-    print(res)
+    p_wave_spectrum = []
+    futures = []
+    with ProcessPoolExecutor() as process_pool:
+        for f in frequency_sample_points:
+            future = process_pool.submit(born_modeling, xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
+            futures.append(future)
+    for future in as_completed(futures):
+        res = future.result()
+        p_wave_spectrum.append(res)
+        print(res)
 
 
 if __name__ == '__main__':
