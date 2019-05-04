@@ -90,7 +90,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
     y_start = 0.
     y_end = velocity_model.y_width
     z_start = 0.
-    z_end = velocity_model.scatterer_max_depth + 2 * velocity_model.scatterer_radius
+    z_end = velocity_model.scatterer_bottom
 
     # scipy cant integrate complex functions, so we split integration into real
     # and imaginary part
