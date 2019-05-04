@@ -100,13 +100,9 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
     def imag_func(z, y, x, *args):
         return scipy.imag(integral(z, y, x, args))
 
-    y_real, abserr_real = integrate.tplquad(real_func, x_start, x_end,
-                                            y_start, y_end,
-                                            z_start, z_end,
+    y_real, abserr_real = integrate.tplquad(real_func, x_start, x_end, y_start, y_end, z_start, z_end,
                                             args=(density, v0, omega, velocity_model, xs, xr))
-    y_imag, abserr_imag = integrate.tplquad(imag_func, x_start, x_end,
-                                            y_start, y_end,
-                                            z_start, z_end,
+    y_imag, abserr_imag = integrate.tplquad(imag_func, x_start, x_end, y_start, y_end, z_start, z_end,
                                             args=(density, v0, omega, velocity_model, xs, xr))
 
     factor = fastfunctions.ricker_frequency_domain(omega, omega_central) * omega**2
