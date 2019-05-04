@@ -78,7 +78,7 @@ def main():
     if processing == "serial":
         for f in tqdm(frequency_sample_points, desc="Born modeling", total=num_of_frequency_steps, unit="frequency samples"):
             res = born_modeling(xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
-            p_wave_spectrum.append(res)
+            p_wave_spectrum.append((f, res))
     elif processing == "parallel":
         with ProcessPoolExecutor() as process_pool:
             for f in frequency_sample_points:
