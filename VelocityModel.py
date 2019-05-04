@@ -73,12 +73,20 @@ class VelocityModel:
         self.scatterer_radius = scatterer_radius
         fracture_with_highest_depth = max(scatterer_positions, key=lambda vec: vec.z)
         self.scatterer_max_depth = fracture_with_highest_depth.z
+        self.scatterer_top = self.scatterer_max_depth - scatterer_radius
+        self.scatterer_bottom = self.scatterer_max_depth + scatterer_radius
 
     def eval_at(self, position: Vector3D) -> float:
         """Get velocity at position in the model"""
-        # check if the position lies within the radius of a scatterer
-        scatterer_indices = self.scatterer_tree.query_ball_point(position.data, self.scatterer_radius)
-        if scatterer_indices:
-            return self.frac_vel
+        # see if depth is on scatterer layer, if no we don't need to query the
+        # KDTree
+        within_scatterer_depth = self.scatterer_top <= position.z <= self.scatterer_bottom
+        if within_scatterer_depth:
+            # check if the position actually lies within the radius of a scatterer
+            scatterer_indices = self.scatterer_tree.query_ball_point(position.data, self.scatterer_radius)
+            if scatterer_indices:
+                return self.frac_vel
+            else:
+                return self.bg_vel
         else:
             return self.bg_vel
