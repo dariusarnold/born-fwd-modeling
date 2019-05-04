@@ -1,7 +1,6 @@
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import itertools
 import math
-from multiprocessing.pool import Pool
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pprint import pprint
 
 import matplotlib.pyplot as plt
@@ -69,28 +68,27 @@ def main():
     xr = Vector3D(5272., 3090., 0.)
     f_central = 30  # hz
     frequency_sample_points = np.linspace(1, 100, 16)  # hz
-    density = 2550
+    density = 2550  # kg/m^3
     p_wave_spectrum = []
     futures = []
-    processing = "serial"
+    fut_freq_mapping = {}
+    processing = "parallel"
     if processing == "serial":
         for f in frequency_sample_points:
             res = born_modeling(xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
             p_wave_spectrum.append(res)
-    elif processing == "concurrent":
+    elif processing == "parallel":
         with ProcessPoolExecutor() as process_pool:
             for f in frequency_sample_points:
                 future = process_pool.submit(born_modeling, xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
                 futures.append(future)
+                fut_freq_mapping[future] = f
         for future in as_completed(futures):
             res = future.result()
-            p_wave_spectrum.append(res)
-    elif processing == "mp":
-        with Pool() as pool:
-            args = [(xs, xr, 2*math.pi*f, 2*math.pi*f_central, density, model) for f in frequency_sample_points]
-            p_wave_spectrum = [x for x in pool.starmap(born_modeling, args)]
+            f = fut_freq_mapping[future]
+            p_wave_spectrum.append((f, res))
 
-    pprint(sorted(p_wave_spectrum, key=lambda c: c.real))
+    pprint(sorted(p_wave_spectrum, key=lambda x: x[0]))
 
 
 if __name__ == '__main__':
