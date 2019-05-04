@@ -2,6 +2,7 @@ import itertools
 import math
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pprint import pprint
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,7 +68,8 @@ def main():
     xs = Vector3D(model.x_width, model.y_width/2, 10.)
     xr = Vector3D(5272., 3090., 0.)
     f_central = 30  # hz
-    frequency_sample_points = np.linspace(1, 100, 16)  # hz
+    num_of_frequency_steps = 128
+    frequency_sample_points = np.linspace(1, 100, num_of_frequency_steps)  # hz
     density = 2550  # kg/m^3
     p_wave_spectrum = []
     futures = []
@@ -83,10 +85,10 @@ def main():
                 future = process_pool.submit(born_modeling, xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
                 futures.append(future)
                 fut_freq_mapping[future] = f
-        for future in as_completed(futures):
-            res = future.result()
-            f = fut_freq_mapping[future]
-            p_wave_spectrum.append((f, res))
+            for future in tqdm(as_completed(futures), desc="Born modeling", total=num_of_frequency_steps, unit="frequency samples"):
+                res = future.result()
+                f = fut_freq_mapping[future]
+                p_wave_spectrum.append((f, res))
 
     p_wave_spectrum = sorted(p_wave_spectrum, key=lambda x: x[0])
     freq_domain = np.array([amplitude for freq, amplitude in p_wave_spectrum])
