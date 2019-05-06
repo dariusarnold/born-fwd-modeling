@@ -32,7 +32,7 @@ std::complex<double> greens_function(double density, double v0, const std::vecto
     double l = length(x - x_prime);
     double a = 1. / (4. * M_PI * density * std::pow(v0, 2.) * l);
     std::complex<double> i(0, -1);
-    std::complex<double> b = std::exp(-i * omega * l / v0);
+    std::complex<double> b = std::exp(i * omega * l / v0);
     return a * b;
 }
     
