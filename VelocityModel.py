@@ -80,12 +80,11 @@ class VelocityModel:
         # see if depth is on scatterer layer, if no we don't need to query the
         # KDTree
         within_scatterer_depth = self.scatterer_top <= position.z <= self.scatterer_bottom
-        if within_scatterer_depth:
-            # check if the position actually lies within the radius of a scatterer
-            scatterer_indices = self.scatterer_tree.query_ball_point(position.data, self.scatterer_radius)
-            if scatterer_indices:
-                return self.frac_vel
-            else:
-                return self.bg_vel
+        if not within_scatterer_depth:
+            return self.bg_vel
+        # check if the position actually lies within the radius of a scatterer
+        scatterer_indices = self.scatterer_tree.query_ball_point(position.data, self.scatterer_radius)
+        if scatterer_indices:
+            return self.frac_vel
         else:
             return self.bg_vel
