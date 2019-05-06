@@ -1,14 +1,12 @@
 import cmath
-import functools
 import math
 from typing import Tuple
 
+import fastfunctions
 import scipy
 from scipy import integrate
 
 from VelocityModel import Vector3D, VelocityModel
-
-import fastfunctions
 
 
 def ricker_frequency_domain(omega: float, omega_central: float) -> float:
