@@ -88,7 +88,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
     x_end = velocity_model.x_width
     y_start = 0.
     y_end = velocity_model.y_width
-    z_start = 0.
+    z_start = velocity_model.scatterer_top
     z_end = velocity_model.scatterer_bottom
 
     # scipy cant integrate complex functions, so we split integration into real
