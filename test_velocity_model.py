@@ -27,7 +27,7 @@ class TestVelocityModel(unittest.TestCase):
         self.assertEqual(self.model.eval_at(close_but_not_in), self.vel_bg)
 
     def test_fracture_depth(self):
-        self.assertEqual(self.model.scatterer_max_depth, 501)
+        self.assertEqual(self.model.scatterer_depth, 501)
 
 
 if __name__ == '__main__':

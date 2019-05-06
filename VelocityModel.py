@@ -71,10 +71,9 @@ class VelocityModel:
         self.scatterer_tree = scipy.spatial.cKDTree(np.asarray(scatterer_positions))
         self.scatterer_positions = scatterer_positions
         self.scatterer_radius = scatterer_radius
-        fracture_with_highest_depth = max(scatterer_positions, key=lambda vec: vec.z)
-        self.scatterer_max_depth = fracture_with_highest_depth.z
-        self.scatterer_top = self.scatterer_max_depth - scatterer_radius
-        self.scatterer_bottom = self.scatterer_max_depth + scatterer_radius
+        self.scatterer_depth = scatterer_positions[0].z
+        self.scatterer_top = self.scatterer_depth - scatterer_radius
+        self.scatterer_bottom = self.scatterer_depth + scatterer_radius
 
     def eval_at(self, position: Vector3D) -> float:
         """Get velocity at position in the model"""
