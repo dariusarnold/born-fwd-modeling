@@ -48,6 +48,30 @@ double scattering_potential_one_div(double v, double v0){
     return (std::pow(v, 2) - std::pow(v0, 2)) / (std::pow(v, 2) * std::pow(v0, 2));
 }
 
+
+std::complex<double> integral(double x, double y, double z, py::tuple additional_params){
+    std::vector<double> x_prime{x, y, z};
+    auto velocity_model = additional_params[3];
+    auto result_obj = velocity_model.attr("eval_at")(x_prime);
+    double v0 = additional_params[1].cast<double>();
+    double v = result_obj.cast<double>();
+    if (v == v0){
+        return 0.;
+        }
+        
+    
+    double density = additional_params[0].cast<double>();
+    double omega = additional_params[2].cast<double>();
+    auto xs = additional_params[4].cast<std::vector<double>>();
+    auto xr = additional_params[5].cast<std::vector<double>>();
+ 
+    double epsilon = scattering_potential(v, v0);
+    std::complex<double> G0_left = greens_function(density, v0, xs, x_prime, omega);
+    std::complex<double> G0_right = greens_function(density, v0, x_prime, xr, omega);
+    return G0_left * epsilon * G0_right;
+    }
+
+
 py::object sub(py::object i, py::object j){
     return i.attr("__sub__")(j);
 }
@@ -89,6 +113,7 @@ PYBIND11_MODULE(fastfunctions, m){
     m.def("scattering_potential", &scattering_potential, "Scattering potential with respect to the homogeneous medium");
     m.def("scattering_potential_one_div", &scattering_potential_one_div, "Scattering potential with one division operation less");
     m.def("length", &length);
+    m.def("integral", &integral);
     /*
     //name arguments with py::arg
     m.def("greet", &greet, "Greet the user", py::arg("user_name"));
