@@ -37,7 +37,7 @@ std::complex<double> greens_function(double density, double v0, const std::vecto
 }
     
 double scattering_potential(double v, double v0){
-    return 1/std::pow(v, 2) - 1/std::pow(v0, 2);
+    return 1/std::pow(v0, 2) - 1/std::pow(v, 2);
     }
     
 double scattering_potential_one_div(double v, double v0){

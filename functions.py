@@ -63,7 +63,7 @@ def integral(x: float, y: float, z: float, additional_params: Tuple):
     :param additional_params:
     :return:
     """
-    x_prime = Vector3D(x, y, z)
+    x_prime = (x, y, z)
     density, v0, omega, velocity_model, xs, xr = additional_params
     v = velocity_model.eval_at(x_prime)
     if v == v0:
@@ -117,7 +117,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
         return integral(x, y, z, args).imag
 
     # additional arguments for integration that are passed to the integral function
-    args = (density, v0, omega, velocity_model, xs, xr)
+    args = (density, v0, omega, velocity_model, xs.data, xr.data)
 
     # integration options
     opts = [{"epsabs": epsabs, "epsrel": epsrel, "limit": limit} for _ in range(3)]
