@@ -32,7 +32,7 @@ def create_scatterers():
     # step parallel to x axis
     scatterer_x_positions = np.linspace(frac_top_left_x, frac_bot_right_x, scatterers_per_fracture)
     xy_combinations = itertools.product(scatterer_x_positions, scatterer_y_positions)
-    scatterers = [Vector3D(x, y, frac_depth) for x, y in xy_combinations]
+    scatterers = [np.asarray((x, y, frac_depth)) for x, y in xy_combinations]
     return scatterers
 
 
