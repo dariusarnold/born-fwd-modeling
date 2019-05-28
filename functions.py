@@ -123,6 +123,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
     opts = [{"epsabs": epsabs, "epsrel": epsrel, "limit": limit} for _ in range(3)]
 
     # Calculate triple integral
+    # integration is carried out in order, x is the innermost integral, z the outermost
     y_real, *_ = integrate.nquad(real_func, integration_limits, args=args, opts=opts)
     y_imag, *_ = integrate.nquad(imag_func, integration_limits, args=args, opts=opts)
 

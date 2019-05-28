@@ -60,39 +60,49 @@ def plot_fractures(velocity_model: VelocityModel):
     plt.show()
 
 
+def angular(f):
+    return 2.*math.pi*f
+
+
 def main():
     model = create_velocity_model()
 
-    #plot_fractures(model)
-
-    xs = Vector3D(model.x_width, model.y_width/2, 10.)
-    xr = Vector3D(5272., 3090., 0.)
-    f_central = 30  # hz
-    num_of_frequency_steps = 128
-    frequency_sample_points = np.linspace(1, 100, num_of_frequency_steps)  # hz
+    # parameters
+    source_pos = Vector3D(model.x_width, model.y_width/2, 10.)
+    receiver_pos = Vector3D(5272., 3090., 0.)
+    # angular frequencies in rad/s
+    omega_central = angular(30)
+    num_of_frequency_steps = 16
+    frequency_min = angular(1)
+    frequency_max = angular(100)
+    processing = "parallel"
+    # Move density into velocity model
     density = 2550.  # kg/m^3
+
+    frequency_samples = np.linspace(frequency_min, frequency_max, num_of_frequency_steps)
     p_wave_spectrum = []
     futures = []
     fut_freq_mapping = {}
-    processing = "parallel"
     if processing == "serial":
-        for f in tqdm(frequency_sample_points, desc="Born modeling", total=num_of_frequency_steps, unit="frequency samples"):
-            res = born_modeling(xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
-            p_wave_spectrum.append((f, res))
+        for frequency in tqdm(frequency_samples, desc="Born modeling", total=num_of_frequency_steps, unit="frequency samples"):
+            res = born_modeling(source_pos, receiver_pos, frequency, omega_central, density=density, velocity_model=model)
+            p_wave_spectrum.append((frequency, res))
     elif processing == "parallel":
         with ProcessPoolExecutor() as process_pool:
-            for f in frequency_sample_points:
-                future = process_pool.submit(born_modeling, xs, xr, 2*math.pi*f, 2*math.pi*f_central, density=density, velocity_model=model)
+            for frequency in frequency_samples:
+                future = process_pool.submit(born_modeling, source_pos, receiver_pos, frequency, omega_central, density=density, velocity_model=model)
                 futures.append(future)
-                fut_freq_mapping[future] = f
+                fut_freq_mapping[future] = frequency
             for future in tqdm(as_completed(futures), desc="Born modeling", total=num_of_frequency_steps, unit="frequency samples"):
                 res = future.result()
-                f = fut_freq_mapping[future]
-                p_wave_spectrum.append((f, res))
+                frequency = fut_freq_mapping[future]
+                p_wave_spectrum.append((frequency, res))
 
     p_wave_spectrum = sorted(p_wave_spectrum, key=lambda x: x[0])
+    print(p_wave_spectrum)
     freq_domain = np.array([amplitude for freq, amplitude in p_wave_spectrum])
     time_domain = np.fft.ifft(freq_domain)
+    # throws ComplexWarning
     plt.plot(time_domain)
     plt.show()
 
