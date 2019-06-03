@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from VelocityModel import VelocityModel, AbstractVelocityModel, Vector3D
 from functions import born_modeling
+from units import Hertz, RadiansPerSecond
 
 
 def plot_fractures(velocity_model: VelocityModel):
@@ -26,8 +27,8 @@ def plot_fractures(velocity_model: VelocityModel):
     plt.show()
 
 
-def angular(f):
-    return 2.*math.pi*f
+def angular(f: Hertz) -> RadiansPerSecond:
+    return RadiansPerSecond(2. * math.pi * f)
 
 
 def main():
@@ -85,8 +86,8 @@ def main():
                         help="coordinates of receiver (geophone position) in m")
     parser.add_argument("output_filename", type=argparse.FileType("w"),
                         help="Filename in which results will be saved")
-    parser.add_argument("-w", "--omega_central", type=lambda x: angular(float(x)),
-                        metavar="Hz", default=angular(30.),
+    parser.add_argument("-w", "--omega_central", type=lambda x: angular(Hertz(float(x))),
+                        metavar="Hz", default=angular(Hertz(30.)),
                         help="Central frequency of Ricker source wavelet in Hz")
     parser.add_argument("-n", "--num_of_frequency_steps", type=int, default=16,
                         help="# of evenly spaced frequency samples to take between [fmin, fmax]")
@@ -110,17 +111,17 @@ def main():
     args = parser.parse_args()
     print(args)
 
-    # angular frequencies in rad/s
-    frequency_min = angular(args.fmin)
-    frequency_max = angular(args.fmax)
-    frequency_samples = np.linspace(frequency_min, frequency_max, args.num_of_frequency_steps)
-    born(args.source_pos, args.receiver_pos, args.velocity_model,
-         args.omega_central, frequency_samples, args.processing, args.cores)
+    frequency_min: RadiansPerSecond = angular(args.fmin)
+    frequency_max: RadiansPerSecond = angular(args.fmax)
+    frequency_samples: Sequence[RadiansPerSecond] = np.linspace(frequency_min, frequency_max,
+                                                                args.num_of_frequency_steps)
+    born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
+         frequency_samples, args.processing, args.cores)
 
 
 def born(source_pos: Vector3D, receiver_pos: Vector3D,
-         velocity_model: AbstractVelocityModel, omega_central: float,
-         frequency_samples: Sequence[float], processing: str, num_cores: int):
+         velocity_model: AbstractVelocityModel, omega_central: RadiansPerSecond,
+         frequency_samples: Sequence[RadiansPerSecond], processing: str, num_cores: int):
     p_wave_spectrum = []
     futures = []
     fut_freq_mapping = {}
