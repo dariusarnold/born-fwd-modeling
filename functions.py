@@ -5,7 +5,7 @@ from typing import Tuple
 import fastfunctions
 from scipy import integrate
 
-from VelocityModel import Vector3D, VelocityModel
+from VelocityModel import Vector3D, AbstractVelocityModel
 
 
 def ricker_frequency_domain(omega: float, omega_central: float) -> float:
@@ -78,7 +78,7 @@ def integral(x: float, y: float, z: float, additional_params: Tuple):
 
 
 def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float, density: float,
-                  velocity_model: VelocityModel, epsabs: float = 1E-16, epsrel: float = 1E-16,
+                  velocity_model: AbstractVelocityModel, epsabs: float = 1E-16, epsrel: float = 1E-16,
                   limit: int = 50) -> complex:
     """
     Calculate scattered P wave in the frequency domain (eq. 1 from Hu2018a) using
