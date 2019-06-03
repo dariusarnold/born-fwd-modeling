@@ -128,9 +128,11 @@ class VelocityModel(AbstractVelocityModel):
         self.scatterer_tree = scipy.spatial.cKDTree(np.asarray(scatterer_positions))
         self.scatterer_positions: Sequence[Vector3D] = scatterer_positions
         self.scatterer_radius: Meter = scatterer_radius
-        self.scatterer_depth = scatterer_positions[0].z
-        self.scatterer_top = self.scatterer_depth - scatterer_radius
-        self.scatterer_bottom = self.scatterer_depth + scatterer_radius
+        retrieve_z_component = lambda x: x[2]
+        lowest_scatterer_depth: Meter = Meter(min(scatterer_positions, key=retrieve_z_component)).z
+        highest_scatterer_depth: Meter = Meter(max(scatterer_positions, key=retrieve_z_component)).z
+        self.scatterer_top: Meter = lowest_scatterer_depth - scatterer_radius
+        self.scatterer_bottom: Meter = highest_scatterer_depth + scatterer_radius
 
     def eval_at(self, position: Vector3D) -> MetersPerSecond:
         """Get velocity at position in the model"""
