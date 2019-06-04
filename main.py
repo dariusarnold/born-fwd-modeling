@@ -49,6 +49,25 @@ def frequency_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.
     return f_samples
 
 
+def time_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.array:
+    """Calculate all time points between 0 and timeseries_length when the timeseries is sampled
+    with the given period."""
+    num_of_samples = int(timeseries_length / sample_period)
+    return np.linspace(0, timeseries_length, num_of_samples)
+
+
+def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str, filename: str):
+    # transpose stacked arrays to save them as columns instead of rows
+    np.savetxt(filename, np.vstack((time_steps, seismogram)).T, header=header)
+
+
+def create_header(args: argparse.Namespace) -> str:
+    """Create header string containing information about the seismogram from the arguments used to
+    create it. This information will be saved as a header in the seismogram file."""
+    h = f"source: {args.source_pos}\nreceiver: {args.receiver_pos}"
+    return h
+
+
 def setup_parser():
     def velocity_model(fname: str) -> VelocityModel:
         """Create VelocityModel from given VelocityModel file name.
@@ -111,7 +130,7 @@ def setup_parser():
     parser.add_argument("-r", "--receiver_pos", nargs=3, type=float, action=ConvertToVector3DAction,
                         metavar=("XR", "YR", "ZR"), required=True,
                         help="coordinates of receiver (geophone position) in m")
-    parser.add_argument("output_filename", type=argparse.FileType("w"),
+    parser.add_argument("filename", type=str, metavar="output_filename",
                         help="Filename in which results will be saved")
     parser.add_argument("-w", "--omega_central", type=angular,
                         metavar="HZ", default=angular(Hertz(30.)),
@@ -141,6 +160,9 @@ def main():
     f_samples = frequency_samples(args.timeseries_length, args.sample_period)
     seismogram = born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
                       f_samples, args.processing, args.cores)
+    t_samples = time_samples(args.timeseries_length, args.sample_period)
+    header = create_header(args)
+    save_seismogram(seismogram, t_samples, header, args.filename)
 
 
 def born(source_pos: Vector3D, receiver_pos: Vector3D, velocity_model: AbstractVelocityModel,
