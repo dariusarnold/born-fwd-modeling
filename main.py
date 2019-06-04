@@ -70,6 +70,16 @@ def setup_parser():
             vector = Vector3D(*values)
             setattr(namespace, self.dest, vector)
 
+    class AddNargsAsAttributesAction(argparse.Action):
+        """Instead of gathering nargs into a list, add them as attributes to the
+        namespace using dest as the attribute names. dest should be a string of
+        names split by whitespace."""
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            names = self.dest.split()
+            for name, value in zip(names, values):
+                setattr(namespace, name, value)
+
     program_description = ("Use born modelling to generate seismic recordings from fracture "
                            "scattered waves.")
     parser = argparse.ArgumentParser(description=program_description,
@@ -89,8 +99,13 @@ def setup_parser():
     parser.add_argument("-w", "--omega_central", type=angular,
                         metavar="HZ", default=angular(Hertz(30.)),
                         help="Central frequency of Ricker source wavelet in Hz")
-    parser.add_argument("-n", "--num_of_frequency_steps", type=int, default=16,
-                        help="# of evenly spaced frequency samples to take between [fmin, fmax]")
+    time_group = parser.add_mutually_exclusive_group()
+    time_group.add_argument("-n", "--num_of_frequency_steps", type=int, default=16,
+                            help="Number of evenly spaced frequency samples to take between "
+                                 "[fmin, fmax]")
+    time_group.add_argument("-t", "--time", nargs=2, type=float, metavar=("LENGTH", "SAMPLEPERIOD"),
+                            help="Length of output time series in s and sample rate in s.",
+                            action=AddNargsAsAttributesAction, dest="timeseries_length sample_period")
     parser.add_argument("--fmin", type=angular, default=angular(Hertz(1.)),
                         help="Minimal frequency for which u_scattering is calculated")
     parser.add_argument("--fmax", type=angular, default=angular(Hertz(100.)),
