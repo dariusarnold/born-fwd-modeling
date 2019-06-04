@@ -31,8 +31,8 @@ def angular(f: Hertz) -> RadiansPerSecond:
     return RadiansPerSecond(2. * math.pi * f)
 
 
-def main():
 
+def setup_parser():
     def velocity_model(fname: str) -> VelocityModel:
         """Create VelocityModel from given VelocityModel file name.
         This function imports the file as a module and looks for a
@@ -70,8 +70,8 @@ def main():
             vector = Vector3D(*values)
             setattr(namespace, self.dest, vector)
 
-    program_description = ("Use born modelling to generate seismic recordings "
-                           "from fracture scattered waves.")
+    program_description = ("Use born modelling to generate seismic recordings from fracture "
+                           "scattered waves.")
     parser = argparse.ArgumentParser(description=program_description,
                                      fromfile_prefix_chars="@")
     # Even though making optional arguments required is against command line
@@ -107,9 +107,13 @@ def main():
                               "(x, y, z) sequence of coordinates and returns the velocity at that "
                               "point. An abstract base class that has to be overridden is provided "
                               "in VelocityModel.py"))
+    return parser
 
+
+def main():
+
+    parser = setup_parser()
     args = parser.parse_args()
-    print(args)
 
     frequency_samples: Sequence[RadiansPerSecond] = np.linspace(args.fmin, args.fmax,
                                                                 args.num_of_frequency_steps)
