@@ -79,15 +79,15 @@ def main():
     # coordinates
     # see https://bugs.python.org/issue14074
     parser.add_argument("-s", "--source_pos", nargs=3, type=float, action=ConvertToVector3DAction,
-                        metavar=("xs", "ys", "zs"),required=True,
+                        metavar=("XS", "YS", "ZS"),required=True,
                         help="coordinates of source (shot position) in m")
     parser.add_argument("-r", "--receiver_pos", nargs=3, type=float, action=ConvertToVector3DAction,
-                        metavar=("xr", "yr", "zr"), required=True,
+                        metavar=("XR", "YR", "ZR"), required=True,
                         help="coordinates of receiver (geophone position) in m")
     parser.add_argument("output_filename", type=argparse.FileType("w"),
                         help="Filename in which results will be saved")
-    parser.add_argument("-w", "--omega_central", type=lambda x: angular(Hertz(float(x))),
-                        metavar="Hz", default=angular(Hertz(30.)),
+    parser.add_argument("-w", "--omega_central", type=angular,
+                        metavar="HZ", default=angular(Hertz(30.)),
                         help="Central frequency of Ricker source wavelet in Hz")
     parser.add_argument("-n", "--num_of_frequency_steps", type=int, default=16,
                         help="# of evenly spaced frequency samples to take between [fmin, fmax]")
