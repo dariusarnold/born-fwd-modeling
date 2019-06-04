@@ -27,6 +27,14 @@ def plot_fractures(velocity_model: VelocityModel):
     plt.show()
 
 
+def plot_time_series(time_series: np.ndarray):
+    plt.plot(np.real(time_series))
+    plt.title("Time series from Born scattering")
+    plt.ylabel("Amplitude")
+    plt.xlabel("Sample")
+    plt.show()
+
+
 def angular(f: Hertz) -> RadiansPerSecond:
     return RadiansPerSecond(2. * math.pi * f)
 
@@ -126,14 +134,13 @@ def setup_parser():
 
 
 def main():
-
     parser = setup_parser()
     args = parser.parse_args()
 
     frequency_samples: Sequence[RadiansPerSecond] = np.linspace(args.fmin, args.fmax,
                                                                 args.num_of_frequency_steps)
-    born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
-         frequency_samples, args.processing, args.cores)
+    seismogram = born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
+                      frequency_samples, args.processing, args.cores)
 
 
 def born(source_pos: Vector3D, receiver_pos: Vector3D,
@@ -163,12 +170,9 @@ def born(source_pos: Vector3D, receiver_pos: Vector3D,
                 p_wave_spectrum.append((frequency, res))
 
     p_wave_spectrum = sorted(p_wave_spectrum, key=lambda x: x[0])
-    print(p_wave_spectrum)
     freq_domain = np.array([amplitude for freq, amplitude in p_wave_spectrum])
-    time_domain = np.fft.ifft(freq_domain)
-    # throws ComplexWarning
-    plt.plot(time_domain)
-    plt.show()
+    time_domain = np.real(np.fft.ifft(freq_domain))
+    return time_domain
 
 
 if __name__ == '__main__':
