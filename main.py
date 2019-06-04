@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from VelocityModel import VelocityModel, AbstractVelocityModel, Vector3D
 from functions import born_modeling
-from units import Hertz, RadiansPerSecond
+from units import Hertz, RadiansPerSecond, Seconds
 
 
 def plot_fractures(velocity_model: VelocityModel):
@@ -38,6 +38,15 @@ def plot_time_series(time_series: np.ndarray):
 def angular(f: Hertz) -> RadiansPerSecond:
     return RadiansPerSecond(2. * math.pi * f)
 
+
+def frequency_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.array:
+    """Calculate frequency samples required to reach the given length and sample period after
+    the inverse Fourier transform."""
+    num_of_samples = int(timeseries_length / sample_period)
+    delta_omega = 2*math.pi / timeseries_length
+    omega_max = num_of_samples * delta_omega
+    f_samples = np.linspace(0, omega_max, num_of_samples)
+    return f_samples
 
 
 def setup_parser():
@@ -107,17 +116,9 @@ def setup_parser():
     parser.add_argument("-w", "--omega_central", type=angular,
                         metavar="HZ", default=angular(Hertz(30.)),
                         help="Central frequency of Ricker source wavelet in Hz")
-    time_group = parser.add_mutually_exclusive_group()
-    time_group.add_argument("-n", "--num_of_frequency_steps", type=int, default=16,
-                            help="Number of evenly spaced frequency samples to take between "
-                                 "[fmin, fmax]")
-    time_group.add_argument("-t", "--time", nargs=2, type=float, metavar=("LENGTH", "SAMPLEPERIOD"),
-                            help="Length of output time series in s and sample rate in s.",
-                            action=AddNargsAsAttributesAction, dest="timeseries_length sample_period")
-    parser.add_argument("--fmin", type=angular, default=angular(Hertz(1.)),
-                        help="Minimal frequency for which u_scattering is calculated")
-    parser.add_argument("--fmax", type=angular, default=angular(Hertz(100.)),
-                        help="Maximum frequency for which u_scattering is calculated")
+    parser.add_argument("-t", "--time", nargs=2, type=float, metavar=("LENGTH", "SAMPLEPERIOD"),
+                        help="Length of output time series in s and sample rate in s.",
+                        action=AddNargsAsAttributesAction, dest="timeseries_length sample_period")
     parser.add_argument("--serial", action="store_const", dest="processing", const="serial",
                         default="parallel", help="This flag activates serial processing of the "
                         "frequency samples instead of parallel (default)")
@@ -137,10 +138,9 @@ def main():
     parser = setup_parser()
     args = parser.parse_args()
 
-    frequency_samples: Sequence[RadiansPerSecond] = np.linspace(args.fmin, args.fmax,
-                                                                args.num_of_frequency_steps)
+    f_samples = frequency_samples(args.timeseries_length, args.sample_period)
     seismogram = born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
-                      frequency_samples, args.processing, args.cores)
+                      f_samples, args.processing, args.cores)
 
 
 def born(source_pos: Vector3D, receiver_pos: Vector3D, velocity_model: AbstractVelocityModel,
