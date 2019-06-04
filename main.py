@@ -91,9 +91,9 @@ def main():
                         help="Central frequency of Ricker source wavelet in Hz")
     parser.add_argument("-n", "--num_of_frequency_steps", type=int, default=16,
                         help="# of evenly spaced frequency samples to take between [fmin, fmax]")
-    parser.add_argument("--fmin", type=float, default=1.,
+    parser.add_argument("--fmin", type=angular, default=angular(Hertz(1.)),
                         help="Minimal frequency for which u_scattering is calculated")
-    parser.add_argument("--fmax", type=float, default=100.,
+    parser.add_argument("--fmax", type=angular, default=angular(Hertz(100.)),
                         help="Maximum frequency for which u_scattering is calculated")
     parser.add_argument("--serial", action="store_const", dest="processing", const="serial",
                         default="parallel", help="This flag activates serial processing of the "
@@ -111,9 +111,7 @@ def main():
     args = parser.parse_args()
     print(args)
 
-    frequency_min: RadiansPerSecond = angular(args.fmin)
-    frequency_max: RadiansPerSecond = angular(args.fmax)
-    frequency_samples: Sequence[RadiansPerSecond] = np.linspace(frequency_min, frequency_max,
+    frequency_samples: Sequence[RadiansPerSecond] = np.linspace(args.fmin, args.fmax,
                                                                 args.num_of_frequency_steps)
     born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
          frequency_samples, args.processing, args.cores)
