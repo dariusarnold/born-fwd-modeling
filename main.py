@@ -2,7 +2,7 @@ import argparse
 import importlib
 import math
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Sequence
+from typing import Sequence, Tuple, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -143,10 +143,10 @@ def main():
                       frequency_samples, args.processing, args.cores)
 
 
-def born(source_pos: Vector3D, receiver_pos: Vector3D,
-         velocity_model: AbstractVelocityModel, omega_central: RadiansPerSecond,
-         frequency_samples: Sequence[RadiansPerSecond], processing: str, num_cores: int):
-    p_wave_spectrum = []
+def born(source_pos: Vector3D, receiver_pos: Vector3D, velocity_model: AbstractVelocityModel,
+         omega_central: RadiansPerSecond, frequency_samples: Sequence[RadiansPerSecond],
+         processing: str, num_cores: int) -> np.ndarray:
+    p_wave_spectrum: List[Tuple[RadiansPerSecond, complex]] = []
     futures = []
     fut_freq_mapping = {}
     density = velocity_model.density
