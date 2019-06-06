@@ -94,7 +94,6 @@ class AbstractVelocityModel(abc.ABC):
         pass
 
 
-
 class VelocityModel(AbstractVelocityModel):
     """
     Velocity model with a homogeneous background velocity that represents fractures
@@ -110,8 +109,8 @@ class VelocityModel(AbstractVelocityModel):
     scatterer_top = None
     scatterer_bottom = None
 
-    def __init__(self, background_velocity: MetersPerSecond, fracture_velocity: MetersPerSecond
-                 , x_width: Meter, y_width: Meter, scatterer_positions: Sequence[Vector3D],
+    def __init__(self, background_velocity: MetersPerSecond, fracture_velocity: MetersPerSecond,
+                 x_width: Meter, y_width: Meter, scatterer_positions: Sequence[Vector3D],
                  scatterer_radius: Meter, density: KgPerCubicMeter):
         """
         Create new model
@@ -129,8 +128,8 @@ class VelocityModel(AbstractVelocityModel):
         self.scatterer_positions: Sequence[Vector3D] = scatterer_positions
         self.scatterer_radius: Meter = scatterer_radius
         retrieve_z_component = lambda x: x[2]
-        lowest_scatterer_depth: Meter = Meter(min(scatterer_positions, key=retrieve_z_component)).z
-        highest_scatterer_depth: Meter = Meter(max(scatterer_positions, key=retrieve_z_component)).z
+        lowest_scatterer_depth: Meter = Meter(min(scatterer_positions, key=retrieve_z_component).z)
+        highest_scatterer_depth: Meter = Meter(max(scatterer_positions, key=retrieve_z_component).z)
         self.scatterer_top: Meter = lowest_scatterer_depth - scatterer_radius
         self.scatterer_bottom: Meter = highest_scatterer_depth + scatterer_radius
 
@@ -153,7 +152,6 @@ def create_scatterers() -> Sequence[Vector3D]:
     """
     Create a list of scatterer positions for the model described in 3D seismic characterization of
     fractures in a dipping layer using the double-beam method (Hao Hu and Yingcai Zheng)
-    :return:
     """
     model_width = Meter(11200.)
     # values taken from Fig4 in Hu2018a, all units m
