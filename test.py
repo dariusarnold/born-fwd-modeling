@@ -1,5 +1,5 @@
 import numpy as np
-import sys
+import time
 
 from VelocityModel import Vector3D, create_velocity_model
 from main import angular, frequency_samples, born, time_samples, create_header, save_seismogram
@@ -33,13 +33,19 @@ f_samples = frequency_samples(length, sample_period)
 def generate_seismograms_for_receivers():
     receivers_x = np.linspace(start_receiver.x, end_receiver.x, num_of_receivers)
     receivers_y = np.linspace(start_receiver.y, end_receiver.y, num_of_receivers)
-    for index, (x, y) in enumerate(zip(receivers_x, receivers_y)):
-        current_receiver = Vector3D(x, y, 0.)
-        seismogram = born(source_pos, current_receiver, vm, omega_central, f_samples)
-        t_samples = time_samples(length, sample_period)
-        header = create_header(current_receiver, source_pos)
-        fname = output_filename.format(id=index)
-        save_seismogram(seismogram, t_samples, header, fname)
+    with open("timing.txt", "w", buffering=1) as f:
+        for index, (x, y) in enumerate(zip(receivers_x, receivers_y)):
+            before = time.time()
+            current_receiver = Vector3D(x, y, 0.)
+            seismogram = born(source_pos, current_receiver, vm, omega_central, f_samples)
+            t_samples = time_samples(length, sample_period)
+            header = create_header(current_receiver, source_pos)
+            fname = output_filename.format(id=index)
+            save_seismogram(seismogram, t_samples, header, fname)
+            after = time.time()
+            runtime = after - before
+            f.write(f"Iteration {index:03d}: {runtime} s\n")
+
 
 
 if __name__ == '__main__':
