@@ -13,28 +13,6 @@ from functions import born_modeling
 from units import Hertz, RadiansPerSecond, Seconds
 
 
-def plot_fractures(velocity_model: VelocityModel):
-    x = list(point.x for point in velocity_model.scatterer_positions)
-    y = list(point.y for point in velocity_model.scatterer_positions)
-    plt.scatter(x, y, marker=",", c="g", s=1)
-    plt.title("Scatterer points in model")
-    plt.xlabel("x axis (West-East, m)")
-    plt.ylabel("y axis (South-North, m)")
-    plt.tight_layout()
-    plt.axis("equal")
-    plt.xlim((0, 11200))
-    plt.ylim((0, 11200))
-    plt.show()
-
-
-def plot_time_series(time_series: np.ndarray):
-    plt.plot(np.real(time_series))
-    plt.title("Time series from Born scattering")
-    plt.ylabel("Amplitude")
-    plt.xlabel("Sample")
-    plt.show()
-
-
 def angular(f: Hertz) -> RadiansPerSecond:
     return RadiansPerSecond(2. * math.pi * f)
 
