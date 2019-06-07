@@ -61,10 +61,10 @@ def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str,
     np.savetxt(filename, np.vstack((time_steps, seismogram)).T, header=header)
 
 
-def create_header(args: argparse.Namespace) -> str:
+def create_header(source_pos: Vector3D, receiver_pos: Vector3D) -> str:
     """Create header string containing information about the seismogram from the arguments used to
     create it. This information will be saved as a header in the seismogram file."""
-    h = f"source: {args.source_pos}\nreceiver: {args.receiver_pos}"
+    h = f"source: {source_pos}\nreceiver: {receiver_pos}"
     return h
 
 
@@ -161,7 +161,7 @@ def main():
     seismogram = born(args.source_pos, args.receiver_pos, args.velocity_model, args.omega_central,
                       f_samples, args.processing, args.cores)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
-    header = create_header(args)
+    header = create_header(args.source_pos, args.receiver_pos)
     save_seismogram(seismogram, t_samples, header, args.filename)
 
 
