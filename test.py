@@ -1,5 +1,8 @@
-import numpy as np
 import time
+from pathlib import Path
+from typing import List, Tuple
+
+import numpy as np
 
 from VelocityModel import Vector3D, create_velocity_model
 from main import angular, frequency_samples, born, time_samples, create_header, \
@@ -51,6 +54,59 @@ def generate_seismograms_for_receivers():
             f.write(f"Iteration {index:03d}: {runtime} s\n")
 
 
+def read_header_from_file(filepath: Path) -> List[str]:
+    """Read first two lines from a file saved by save_seismogram function and
+    return them as a list of strings, stripped from newline characters."""
+    with open(filepath, "r") as f:
+        # read first 2 lines
+        header = [next(f).rstrip("\n") for _ in range(2)]
+    return header
+
+
+def parse_header(header: List[str]) -> List[Vector3D]:
+    """Parse header from seismogram file to Vectors of source and receiver
+    position"""
+    vectors = []
+    for line in header:
+        data = line.split(":")[-1]
+        vec = eval(data)
+        vectors.append(vec)
+    return vectors
+
+
+def load_seismogram(filepath: Path) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Load seismogram from file
+    :return: two numpy arrays: First is time data, second is seismic data
+    """
+    times, seismic_data = np.loadtxt(filepath, unpack=True)
+    return times, seismic_data
+
+
+def load_seismograms(seismograms_path: Path) -> Tuple[np.ndarray, np.ndarray,
+                                                      List[Vector3D], Vector3D]:
+    """
+    Load seismograms from the given path.
+    This loads all seismograms from the path and returns them as well as
+    additional information.
+    :param seismograms_path: Path to seismogram files
+    :return Numpy array consisting of all loaded seismograms, numpy array
+    containing the common timesteps for all seismograms, a list of receiver
+    positions for these seismograms, and the source position.
+    """
+    seismograms = []
+    receiver_positions = []
+    for index in range(num_of_receivers):
+        fname = output_filename.format(id=index)
+        fpath = seismograms_path / fname
+        header = read_header_from_file(fpath)
+        source_pos, receiver_pos = parse_header(header)
+        receiver_positions.append(receiver_pos)
+        times, seismic_data = load_seismogram(fpath)
+        seismograms.append(seismic_data)
+    return np.array(seismograms), times, receiver_positions, source_pos
+
 
 if __name__ == '__main__':
-    generate_seismograms_for_receivers()
+    #generate_seismograms_for_receivers()
+    seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path("output"))
