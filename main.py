@@ -167,7 +167,7 @@ def main():
 
 def born(source_pos: Vector3D, receiver_pos: Vector3D, velocity_model: AbstractVelocityModel,
          omega_central: RadiansPerSecond, frequency_samples: Sequence[RadiansPerSecond],
-         processing: str, num_cores: int) -> np.ndarray:
+         processing: str = "parallel", num_cores: int = None) -> np.ndarray:
     p_wave_spectrum: List[Tuple[RadiansPerSecond, complex]] = []
     futures = []
     fut_freq_mapping = {}
