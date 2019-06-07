@@ -47,6 +47,9 @@ class Vector3D:
         """Implement subtraction operator"""
         return Vector3D(self.x-other.x, self.y-other.y, self.z-other.z)
 
+    def __eq__(self, other):
+        return np.all(self.data == other.data)
+
 
 class AbstractVelocityModel(abc.ABC):
     """
