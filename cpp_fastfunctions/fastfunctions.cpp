@@ -46,7 +46,7 @@ double scattering_potential_one_div(double v, double v0){
     https://godbolt.org/z/sSxHeH
     */    
     return (std::pow(v, 2) - std::pow(v0, 2)) / (std::pow(v, 2) * std::pow(v0, 2));
-}
+    }
 
 
 std::complex<double> integral(double x, double y, double z, py::tuple additional_params){
@@ -58,8 +58,6 @@ std::complex<double> integral(double x, double y, double z, py::tuple additional
     if (v == v0){
         return 0.;
         }
-        
-    
     double density = additional_params[0].cast<double>();
     double omega = additional_params[2].cast<double>();
     auto xs = additional_params[4].cast<std::vector<double>>();
@@ -70,6 +68,7 @@ std::complex<double> integral(double x, double y, double z, py::tuple additional
     std::complex<double> G0_right = greens_function(density, v0, x_prime, xr, omega);
     return G0_left * epsilon * G0_right;
     }
+    
 
 std::complex<double> integral_sphere(double x, double y, double z, py::tuple additional_params){
     double density = additional_params[0].cast<double>();

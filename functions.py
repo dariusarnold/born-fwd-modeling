@@ -5,7 +5,8 @@ from typing import Tuple
 import fastfunctions
 from scipy import integrate
 
-from VelocityModel import Vector3D, VelocityModel
+from VelocityModel import Vector3D, AbstractVelocityModel
+from units import RadiansPerSecond, KgPerCubicMeter, MetersPerSecond
 
 
 def ricker_frequency_domain(omega: float, omega_central: float) -> float:
@@ -77,9 +78,9 @@ def integral(x: float, y: float, z: float, additional_params: Tuple):
     return G0_left * epsilon * G0_right
 
 
-def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float, density: float,
-                  velocity_model: VelocityModel, epsabs: float = 1E-16, epsrel: float = 1E-16,
-                  limit: int = 50) -> complex:
+def born_modeling(xs: Vector3D, xr: Vector3D, omega: RadiansPerSecond, omega_central: RadiansPerSecond,
+                  density: KgPerCubicMeter, velocity_model: AbstractVelocityModel, epsabs: float = 1E-16,
+                  epsrel: float = 1E-16, limit: int = 50) -> complex:
     """
     Calculate scattered P wave in the frequency domain (eq. 1 from Hu2018a) using
     born approximation. Evaluate for a frequency range to get the P wave spectrum.
@@ -96,7 +97,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
     passed on to scipy.integrate.nquad
     :return:
     """
-    v0 = velocity_model.bg_vel
+    v0 = velocity_model.bg_vel  # type: MetersPerSecond
 
     # integration limits. Since integral is zero everywhere outside of the scatterers,
     # we can limit the integration area
@@ -123,6 +124,7 @@ def born_modeling(xs: Vector3D, xr: Vector3D, omega: float, omega_central: float
     opts = [{"epsabs": epsabs, "epsrel": epsrel, "limit": limit} for _ in range(3)]
 
     # Calculate triple integral
+    # integration is carried out in order, x is the innermost integral, z the outermost
     y_real, *_ = integrate.nquad(real_func, integration_limits, args=args, opts=opts)
     y_imag, *_ = integrate.nquad(imag_func, integration_limits, args=args, opts=opts)
 
