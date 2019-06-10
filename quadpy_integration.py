@@ -33,7 +33,8 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
         """
         Vectorized version of the greens function using numpy.
         """
-        lengths = np.linalg.norm(x - x_prime, axis=0)
+        subtraction = x - x_prime
+        lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
         return 1. / lengths * np.exp(-1j * omega * lengths / bg_vel)
 
     def G0_left(xs, x_prime):
