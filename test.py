@@ -78,7 +78,7 @@ def load_seismograms(seismograms_path: Path) -> Tuple[np.ndarray, np.ndarray,
     seismograms = []
     receiver_positions = []
     for index in range(num_of_receivers):
-        fname = output_filename.format(id=index)
+        fname = Path(output_filename.format(id=index)).name
         fpath = seismograms_path / fname
         header = read_header_from_file(fpath)
         source_pos, receiver_pos = parse_header(header)
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     length: Seconds = 4
     sample_period: Seconds = 0.004
     # format id leftpadded with zeros
-    output_filename = "receiver_{id:03d}.txt"
+    output_filename = "output/receiver_{id:03d}.txt"
     f_samples = frequency_samples(length, sample_period)
     scatterers = np.array(create_scatterers())
     density = KgPerCubicMeter(2550.)
@@ -115,6 +115,6 @@ if __name__ == '__main__':
     receivers_x = np.linspace(start_receiver.x, end_receiver.x, num_of_receivers)
     receivers_y = np.linspace(start_receiver.y, end_receiver.y, num_of_receivers)
     receivers = np.array([(x, y, 0.) for x, y in zip(receivers_x, receivers_y)])
-    #generate_seismograms_for_receivers(source_pos, receivers)
-    seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path("output"))
+    generate_seismograms_for_receivers(source_pos, receivers)
+    seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path(output_filename).parent)
     plot_seismogram_gather(seismos)
