@@ -40,10 +40,18 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
         Interestingly in numpy a complex exp takes more time to compute than the
         expanded version from eulers formula see:
         https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148
+        This version is taken from above link and is even faster than a simple cos+isin
+        since
         :param exp_term: The argument of the complex exp without imaginary i
         :return: Numpy array of complex values
         """
-        return np.cos(exp_term) + 1j * np.sin(exp_term)
+        df_exp = np.empty(exp_term.shape, dtype=np.csingle)
+        trig_buf = np.cos(exp_term)
+        df_exp.real[:] = trig_buf
+        np.sin(exp_term, out=trig_buf)
+        df_exp.imag[:] = trig_buf
+        return df_exp
+
 
     def greens_function_vectorized(x: np.array, x_prime: np.array) -> np.array:
         """
@@ -54,7 +62,8 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
         lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        return 1/lengths * complex_exp(-omega * lengths / bg_vel)
+        # arguments of exp are reordered resulting in only one multiplication of lengths
+        return 1./lengths * complex_exp(-omega * (1. / bg_vel) * lengths)
 
     def integral(x):
         """
