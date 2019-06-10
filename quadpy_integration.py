@@ -29,13 +29,21 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
     :return:
     """
 
+    def exp(exp_term):
+        """Interestingly in numpy a complex exp takes more time to compute
+        than the expanded version from eulers formula
+        see: https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148"""
+        return np.cos(exp_term) + 1j * np.sin(exp_term)
+
     def greens_function_vectorized(x, x_prime):
         """
         Vectorized version of the greens function using numpy.
         """
         subtraction = x - x_prime
         lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
-        return 1. / lengths * np.exp(-1j * omega * lengths / bg_vel)
+        # minus sign in exp term is required since it was exp(-ix) before, which
+        # transforms to cos(-x) + i * sin(-x)
+        return 1/lengths * exp(-omega * lengths / bg_vel)
 
     def integral(x):
         """
