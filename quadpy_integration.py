@@ -81,7 +81,7 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
         return G0_left * epsilon * G0_right
 
     scatterer_radii = np.full(len(scatterer_pos), scatterer_radius)
-    integration_scheme = quadpy.ball.HammerStroud("14-3a")
+    integration_scheme = quadpy.ball.Stroud("S3 3-1")
     # sum over the result from all scatterer points
     res = np.sum(quadpy.ball.integrate(integral, scatterer_pos, scatterer_radii, integration_scheme))
     res *= ff.ricker_frequency_domain(omega, omega_central) * omega**2
