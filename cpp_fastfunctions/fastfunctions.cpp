@@ -70,6 +70,18 @@ std::complex<double> integral(double x, double y, double z, py::tuple additional
     }
     
 
+std::complex<double> integral_sphere(double x, double y, double z, py::tuple additional_params){
+    double density = additional_params[0].cast<double>();
+    double v0 = additional_params[1].cast<double>();
+    auto xs = additional_params[2].cast<std::vector<double>>();
+    auto xr = additional_params[3].cast<std::vector<double>>();
+    double omega = additional_params[4].cast<double>();
+    std::vector<double> x_prime{x, y, z};
+    std::complex<double> G0_left = greens_function(density, v0, xs, x_prime, omega);
+    std::complex<double> G0_right = greens_function(density, v0, x_prime, xr, omega);
+    return G0_left * G0_right;
+    }
+
 py::object sub(py::object i, py::object j){
     return i.attr("__sub__")(j);
 }
@@ -112,6 +124,7 @@ PYBIND11_MODULE(fastfunctions, m){
     m.def("scattering_potential_one_div", &scattering_potential_one_div, "Scattering potential with one division operation less");
     m.def("length", &length);
     m.def("integral", &integral);
+    m.def("integral_sphere", &integral_sphere);
     /*
     //name arguments with py::arg
     m.def("greet", &greet, "Greet the user", py::arg("user_name"));
