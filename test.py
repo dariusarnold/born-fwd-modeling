@@ -28,7 +28,7 @@ num_of_receivers = 100
 #
 # constant parameters, dont change these
 #
-source_pos = Vector3D(11200., 5600., 10.)
+source_pos = np.array((11200., 5600., 10.))
 vm = create_velocity_model()
 omega_central: RadiansPerSecond = angular(30.)
 length: Seconds = 4
@@ -36,7 +36,7 @@ sample_period: Seconds = 0.004
 # format id leftpadded with zeros
 output_filename = "receiver_{id:03d}.txt"
 f_samples = frequency_samples(length, sample_period)
-scatterers = create_scatterers()
+scatterers = np.array(create_scatterers())
 density = KgPerCubicMeter(2550.)
 bg_vel = MetersPerSecond(4800.)
 frac_vel = MetersPerSecond(4320.)
@@ -49,7 +49,7 @@ def generate_seismograms_for_receivers():
     with open("timing.txt", "w", buffering=1) as f:
         for index, (x, y) in enumerate(zip(receivers_x, receivers_y)):
             before = time.time()
-            current_receiver = Vector3D(x, y, 0.)
+            current_receiver = np.array((x, y, 0.))
             seismogram = born(source_pos, current_receiver, scatterers, omega_central, f_samples,
                               density, bg_vel, frac_vel, scatterer_radius)
             t_samples = time_samples(length, sample_period)
@@ -115,6 +115,6 @@ def load_seismograms(seismograms_path: Path) -> Tuple[np.ndarray, np.ndarray,
 
 
 if __name__ == '__main__':
-    #generate_seismograms_for_receivers()
+    generate_seismograms_for_receivers()
     seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path("output"))
     plot_seismogram_gather(seismos)
