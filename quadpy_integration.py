@@ -83,10 +83,10 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
 def born(source_pos: np.array, receiver_pos: np.array, scatterer_positions: np.array,
          omega_central: RadiansPerSecond, omega_samples: Sequence[RadiansPerSecond],
          density: KgPerCubicMeter, background_vel: MetersPerSecond, fracture_vel:
-         MetersPerSecond, scatterer_radius: Meter) -> np.array:
+         MetersPerSecond, scatterer_radius: Meter, quiet: bool = False) -> np.array:
     """Calculate complete seismogram"""
     spectrum = []
-    for omega in tqdm(omega_samples, desc="Born modeling", total=len(omega_samples), unit="frequency samples"):
+    for omega in tqdm(omega_samples, desc="Born modeling", total=len(omega_samples), unit="frequency samples", disable=quiet):
         u_scattering = born_all_scatterers(source_pos, receiver_pos, scatterer_positions,
                                            omega, omega_central, density,
                                            background_vel, fracture_vel, scatterer_radius)
