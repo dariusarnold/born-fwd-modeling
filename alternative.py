@@ -10,7 +10,7 @@ from scipy.integrate import nquad
 from tqdm import tqdm
 
 import functions as f
-from main import create_scatterers
+from VelocityModel import create_scatterers
 
 
 def integral(x, y, z, additional_params):
