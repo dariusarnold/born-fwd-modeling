@@ -76,7 +76,9 @@ def parse_header(header: List[str]) -> List[Vector3D]:
     vectors = []
     for line in header:
         data = line.split(":")[-1]
-        vec = eval(data)
+        # remove outer square brackets
+        data = data[2:-1]
+        vec = np.fromstring(data, dtype=float, sep=" ")
         vectors.append(vec)
     return vectors
 
