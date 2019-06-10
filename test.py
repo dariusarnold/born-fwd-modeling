@@ -4,10 +4,12 @@ from typing import List, Tuple
 
 import numpy as np
 
-from VelocityModel import Vector3D, create_velocity_model
-from main import angular, frequency_samples, born, time_samples, create_header, \
+from VelocityModel import Vector3D, create_velocity_model, create_scatterers
+from main import angular, frequency_samples, time_samples, create_header, \
     save_seismogram
-from units import Seconds, RadiansPerSecond
+from plotting import plot_seismogram_gather
+from units import Seconds, RadiansPerSecond, KgPerCubicMeter, MetersPerSecond, Meter
+from quadpy_integration import born
 
 """
 This script generates data to recreate fig. 5b) from the paper 3D seismic 
@@ -34,6 +36,11 @@ sample_period: Seconds = 0.004
 # format id leftpadded with zeros
 output_filename = "receiver_{id:03d}.txt"
 f_samples = frequency_samples(length, sample_period)
+scatterers = create_scatterers()
+density = KgPerCubicMeter(2550.)
+bg_vel = MetersPerSecond(4800.)
+frac_vel = MetersPerSecond(4320.)
+scatterer_radius = Meter(1.)
 
 
 def generate_seismograms_for_receivers():
@@ -43,8 +50,8 @@ def generate_seismograms_for_receivers():
         for index, (x, y) in enumerate(zip(receivers_x, receivers_y)):
             before = time.time()
             current_receiver = Vector3D(x, y, 0.)
-            seismogram = born(source_pos, current_receiver, vm, omega_central,
-                              f_samples)
+            seismogram = born(source_pos, current_receiver, scatterers, omega_central, f_samples,
+                              density, bg_vel, frac_vel, scatterer_radius)
             t_samples = time_samples(length, sample_period)
             header = create_header(current_receiver, source_pos)
             fname = output_filename.format(id=index)
@@ -110,3 +117,4 @@ def load_seismograms(seismograms_path: Path) -> Tuple[np.ndarray, np.ndarray,
 if __name__ == '__main__':
     #generate_seismograms_for_receivers()
     seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path("output"))
+    plot_seismogram_gather(seismos)
