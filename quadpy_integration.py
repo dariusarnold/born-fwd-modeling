@@ -18,33 +18,43 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
                         density: KgPerCubicMeter, bg_vel: MetersPerSecond,
                         frac_vel: MetersPerSecond, scatterer_radius: Meter) -> complex:
     """
-    Calculate born scattering for a single scatterer position
-    :param xs:
-    :param yr:
-    :param omega:
-    :param omega_central:
-    :param density:
-    :param bg_vel:
-    :param frac_vel:
-    :param scatterer_radius:
-    :return:
+    Calculate born scattering for all scatterer positions
+    This implements eq. (1) from
+    3D seismic characterization of fractures in a dipping layer using the double-beam method
+    Hao Hu and Yingcai Zheng
+    :param xs: Source position
+    :param yr: Receiver position
+    :param omega: Angular frequency of this sample
+    :param omega_central: Central frequency of ricker source wavelet
+    :param density: Homogeneous background density of model
+    :param bg_vel: Homogeneous background velocity
+    :param frac_vel: Velocity of the fractures, which are represented by the
+    scatterers
+    :param scatterer_radius: Radius of a scatterer
+    :return: Value of single frequency bin of the scattered P wave
     """
 
-    def exp(exp_term):
-        """Interestingly in numpy a complex exp takes more time to compute
-        than the expanded version from eulers formula
-        see: https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148"""
+    def complex_exp(exp_term: np.array) -> np.array:
+        """
+        Calculate complex exp by Eulers formula using cos(x) + i sin(x).
+        Interestingly in numpy a complex exp takes more time to compute than the
+        expanded version from eulers formula see:
+        https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148
+        :param exp_term: The argument of the complex exp without imaginary i
+        :return: Numpy array of complex values
+        """
         return np.cos(exp_term) + 1j * np.sin(exp_term)
 
-    def greens_function_vectorized(x, x_prime):
+    def greens_function_vectorized(x: np.array, x_prime: np.array) -> np.array:
         """
         Vectorized version of the greens function using numpy.
         """
+        # this is an optimized version of linalg.norm
         subtraction = x - x_prime
         lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        return 1/lengths * exp(-omega * lengths / bg_vel)
+        return 1/lengths * complex_exp(-omega * lengths / bg_vel)
 
     def integral(x):
         """
@@ -61,8 +71,10 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
         G0_right = greens_function_vectorized(x, xr[:, None, None])
         return G0_left * epsilon * G0_right
 
-    res = np.sum(quadpy.ball.integrate(integral, scatterer_pos, np.full(len(scatterer_pos), scatterer_radius),
-                                       quadpy.ball.HammerStroud("14-3a")))
+    scatterer_radii = np.full(len(scatterer_pos), scatterer_radius)
+    integration_scheme = quadpy.ball.HammerStroud("14-3a")
+    # sum over the result from all scatterer points
+    res = np.sum(quadpy.ball.integrate(integral, scatterer_pos, scatterer_radii, integration_scheme))
     res *= ff.ricker_frequency_domain(omega, omega_central) * omega**2
     res *= 1 / (4. * np.pi * density * bg_vel**2)
     return res
