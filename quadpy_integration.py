@@ -37,29 +37,23 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
         lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
         return 1. / lengths * np.exp(-1j * omega * lengths / bg_vel)
 
-    def G0_left(xs, x_prime):
-        """The left Greens function has xs as a 3D vector, while x_prime
-        contains all evaluation coordinates"""
-        # add empty axes to 3D vector so subtraction with full x_prime works
-        return greens_function_vectorized(xs[:, None, None], x_prime)
-
-    def G0_right(x_prime, xr):
-        """The right greens function has xr as a 3D vector and x_prime as the
-        array containging all evaluation coordinates"""
-        # add empty axes to 3D vector fur subtraction
-        return greens_function_vectorized(x_prime, xr[:, None, None])
-
     def integral(x):
-        """x is a np array containing all points to be evaluated.
+        """
+        x is a np array containing all points to be evaluated.
         Its shape is (3, M, N) where M is the number of scatterer midpoints
         returned by create_scatterers and N is the number of evaluation points
         chosen by quadpy. The first axis is fixed (3). It represents the x, y, z
-        values, eg. x[0] contains all x values of all points."""
+        values, eg. x[0] contains all x values of all points.
+        """
         epsilon = ff.scattering_potential(frac_vel, bg_vel)
-        return G0_left(xs, x) * epsilon * G0_right(x, xr)
+        # extend the 3D vector from shape (3,) to (3, 1, 1) so numpy
+        # broadcasting works as expected
+        G0_left = greens_function_vectorized(xs[:, None, None], x)
+        G0_right = greens_function_vectorized(x, xr[:, None, None])
+        return G0_left * epsilon * G0_right
 
     res = np.sum(quadpy.ball.integrate(integral, scatterer_pos, np.full(len(scatterer_pos), scatterer_radius),
-                                quadpy.ball.HammerStroud("14-3a")))
+                                       quadpy.ball.HammerStroud("14-3a")))
     res *= ff.ricker_frequency_domain(omega, omega_central) * omega**2
     res *= 1 / (4. * np.pi * density * bg_vel**2)
     return res
