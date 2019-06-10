@@ -7,6 +7,7 @@ import numpy as np
 from VelocityModel import Vector3D, create_velocity_model
 from main import angular, frequency_samples, born, time_samples, create_header, \
     save_seismogram
+from plotting import plot_seismogram_gather
 from units import Seconds, RadiansPerSecond
 
 """
@@ -110,3 +111,4 @@ def load_seismograms(seismograms_path: Path) -> Tuple[np.ndarray, np.ndarray,
 if __name__ == '__main__':
     #generate_seismograms_for_receivers()
     seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path("output"))
+    plot_seismogram_gather(seismos, receiver_positions)
