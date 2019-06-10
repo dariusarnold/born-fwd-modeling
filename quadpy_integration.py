@@ -1,6 +1,9 @@
 import time
+from typing import Sequence
 
 import fastfunctions as ff
+from tqdm import tqdm
+
 import functions as f
 import numpy as np
 import quadpy
@@ -8,8 +11,6 @@ from VelocityModel import Vector3D, create_scatterers
 from main import angular, frequency_samples
 from plotting import plot_time_series
 from units import RadiansPerSecond, KgPerCubicMeter, MetersPerSecond, Meter, Hertz
-
-from alternative import integral
 
 
 def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
@@ -67,6 +68,21 @@ def born_all_scatterers(xs: Vector3D, xr: Vector3D, scatterer_pos: np.ndarray,
     return res
 
 
+def born(source_pos: np.array, receiver_pos: np.array, scatterer_positions: np.array,
+         omega_central: RadiansPerSecond, omega_samples: Sequence[RadiansPerSecond],
+         density: KgPerCubicMeter, background_vel: MetersPerSecond, fracture_vel:
+         MetersPerSecond, scatterer_radius: Meter) -> np.array:
+    """Calculate complete seismogram"""
+    spectrum = []
+    for omega in tqdm(omega_samples, desc="Born modeling", total=len(omega_samples), unit="frequency samples"):
+        u_scattering = born_all_scatterers(source_pos, receiver_pos, scatterer_positions,
+                                           omega, omega_central, density,
+                                           background_vel, fracture_vel, scatterer_radius)
+        spectrum.append(u_scattering)
+    time_domain = np.real(np.fft.ifft(spectrum))
+    return time_domain
+
+
 if __name__ == '__main__':
 
     xs = np.array((11200.0, 5600.0, 10.0))
@@ -79,15 +95,7 @@ if __name__ == '__main__':
     scatterer_radius = Meter(1.)
 
     scatterers = np.array(create_scatterers())
-    f_samples = frequency_samples(4, 0.004)
-    spectrum = []
-    for omega in f_samples:
-        before = time.time()
-        res = born_all_scatterers(xs, xr, scatterers, omega, omega_central,
-                                  density, bg_vel, frac_vel, scatterer_radius)
-        spectrum.append(res)
-        after = time.time()
-        print(after-before, " s")
-    print(spectrum)
-    time_domain = np.real(np.fft.ifft(spectrum))
+    omega_samples = frequency_samples(4, 0.004)
+    time_domain = born(xs, xr, scatterers, omega_central, omega_samples, density,
+                       bg_vel, frac_vel, scatterer_radius)
     plot_time_series(time_domain)
