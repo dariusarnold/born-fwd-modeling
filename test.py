@@ -4,12 +4,11 @@ from typing import List, Tuple
 
 import numpy as np
 
-from VelocityModel import Vector3D, create_velocity_model, create_scatterers
+from VelocityModel import create_velocity_model
 from main import angular, frequency_samples, time_samples, create_header, \
-    save_seismogram
+    save_seismogram, born
 from plotting import plot_seismogram_gather
 from units import Seconds, RadiansPerSecond, KgPerCubicMeter, MetersPerSecond, Meter
-from quadpy_integration import born
 
 """
 This script generates data to recreate fig. 5b) from the paper 3D seismic 
@@ -19,11 +18,11 @@ method as mentioned in the paper.
 """
 
 def generate_seismograms_for_receivers(source_pos: np.array, receivers: np.array):
+    vm = create_velocity_model()
     with open("timing.txt", "w", buffering=1) as f:
         for index, receiver_pos in enumerate(receivers):
             before = time.time()
-            seismogram = born(source_pos, receiver_pos, scatterers, omega_central, f_samples,
-                              density, bg_vel, frac_vel, scatterer_radius)
+            seismogram = born(source_pos, receiver_pos, vm, omega_central, f_samples)
             t_samples = time_samples(length, sample_period)
             header = create_header(receiver_pos, source_pos)
             fname = output_filename.format(id=index)
@@ -42,7 +41,7 @@ def read_header_from_file(filepath: Path) -> List[str]:
     return header
 
 
-def parse_header(header: List[str]) -> List[Vector3D]:
+def parse_header(header: List[str]) -> List[np.ndarray]:
     """Parse header from seismogram file to Vectors of source and receiver
     position"""
     vectors = []
@@ -65,7 +64,7 @@ def load_seismogram(filepath: Path) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def load_seismograms(seismograms_path: Path) -> Tuple[np.ndarray, np.ndarray,
-                                                      List[Vector3D], Vector3D]:
+                                                      List[np.ndarray], np.ndarray]:
     """
     Load seismograms from the given path.
     This loads all seismograms from the path and returns them as well as
@@ -92,8 +91,8 @@ if __name__ == '__main__':
     #
     # parameters
     #
-    start_receiver = Vector3D(5272., 3090., 0.)
-    end_receiver = Vector3D(3090., 5430., 0.)
+    start_receiver = np.array((5272., 3090., 0.))
+    end_receiver = np.array((3090., 5430., 0.))
     num_of_receivers = 100
 
     #
@@ -107,13 +106,12 @@ if __name__ == '__main__':
     # format id leftpadded with zeros
     output_filename = "output/receiver_{id:03d}.txt"
     f_samples = frequency_samples(length, sample_period)
-    scatterers = np.array(create_scatterers())
     density = KgPerCubicMeter(2550.)
     bg_vel = MetersPerSecond(4800.)
     frac_vel = MetersPerSecond(4320.)
     scatterer_radius = Meter(1.)
-    receivers_x = np.linspace(start_receiver.x, end_receiver.x, num_of_receivers)
-    receivers_y = np.linspace(start_receiver.y, end_receiver.y, num_of_receivers)
+    receivers_x = np.linspace(start_receiver[0], end_receiver[0], num_of_receivers)
+    receivers_y = np.linspace(start_receiver[1], end_receiver[1], num_of_receivers)
     receivers = np.array([(x, y, 0.) for x, y in zip(receivers_x, receivers_y)])
     generate_seismograms_for_receivers(source_pos, receivers)
     seismos, timesteps, receiver_positions, source_pos = load_seismograms(Path(output_filename).parent)
