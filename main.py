@@ -89,6 +89,8 @@ def setup_parser() -> argparse.ArgumentParser:
                               "contains the (x, y, z) sequence of coordinates for every point. "
                               "An abstract base class that has to be overridden is provided in "
                               "VelocityModel.py"))
+    parser.add_argument("-q", "--quiet", action="store_true", help=("Flag to disable performance "
+                        "output (iterations per second)."))
     return parser
 
 
@@ -102,7 +104,7 @@ def main() -> None:
 
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
     seismogram = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
-                      omega_samples)
+                      omega_samples, args.quiet)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
     save_seismogram(seismogram, t_samples, header, args.filename)
