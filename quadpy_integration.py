@@ -1,11 +1,20 @@
 import os
+import warnings
 
-import fastfunctions as ff
-# TODO if fastfunctions is not found, fallback to functions and print warning
 import quadpy
 
 from VelocityModel import AbstractVelocityModel
 from units import RadiansPerSecond
+
+# If fastfunctions is not found, fallback to functions and print warning
+try:
+    from fastfunctions import ricker_frequency_domain, scattering_potential
+except ModuleNotFoundError:
+    from functions import ricker_frequency_domain, scattering_potential
+    msg = ("Fallback to python functions for ricker wavelet and scattering potential. "
+           "For a possible minor speedup, compile fastfunctions.cpp with pybind11."
+           "Help can be found in the README.md.")
+    warnings.warn(msg, ImportWarning)
 
 
 def set_number_numpy_threads(threads: int):
@@ -77,7 +86,7 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray, velocity_model: Abstract
         chosen by quadpy. The first axis is fixed (3). It represents the x, y, z
         values, eg. x[0] contains all x values of all points.
         """
-        epsilon = ff.scattering_potential(velocity_model.fracture_velocity, velocity_model.background_velocity)
+        epsilon = scattering_potential(velocity_model.fracture_velocity, velocity_model.background_velocity)
         # extend the 3D vector from shape (3,) to (3, 1, 1) so numpy
         # broadcasting works as expected
         G0_left = greens_function_vectorized(xs[:, None, None], x)
@@ -89,6 +98,6 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray, velocity_model: Abstract
     # sum over the result from all scatterer points
     res = np.sum(quadpy.ball.integrate(integral, velocity_model.scatterer_positions, scatterer_radii,
                                        integration_scheme))
-    res *= ff.ricker_frequency_domain(omega, omega_central) * omega**2
+    res *= ricker_frequency_domain(omega, omega_central) * omega**2
     res *= 1 / (4. * np.pi * velocity_model.density * velocity_model.background_velocity**2)
     return res
