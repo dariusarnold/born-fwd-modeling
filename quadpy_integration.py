@@ -1,10 +1,24 @@
 import time
+import os
 from typing import Sequence
 
 import fastfunctions as ff
 from tqdm import tqdm
 
 import functions as f
+def set_number_numpy_threads(threads: int):
+    """
+    Set number of threads numpy will use for parallel processing.
+    This has to be called before numpy is imported!
+    """
+    if threads <= 0:
+        # this will leave the default value unchanged
+        return
+    threads = str(threads)
+    os.environ["MKL_NUM_THREADS"] = threads
+    os.environ["NUMEXPR_NUM_THREADS"] = threads
+    os.environ["OMP_NUM_THREADS"] = threads
+#set_number_numpy_threads(1)
 import numpy as np
 import quadpy
 from VelocityModel import Vector3D, create_scatterers
