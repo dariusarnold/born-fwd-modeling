@@ -79,8 +79,7 @@ def setup_parser() -> argparse.ArgumentParser:
                         help="Length of output time series in s and sample rate in s.",
                         action=AddNargsAsAttributesAction, dest="timeseries_length sample_period")
     parser.add_argument("-c", "--cores", type=int, help=("Number of cores for parallelization. "
-                        "If not specified, all available cores will be used"))
-    #TODO implement the last sentence of the above argument
+                        "If not specified, numpys default value will be kept."))
     parser.add_argument("-m", "--model", type=velocity_model, default="VelocityModel.py",
                         help=("Specify file from which the velocity model is created. The file "
                               "should contain a create_velocity_model function that returns a "
@@ -103,7 +102,7 @@ def main() -> None:
 
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
     seismogram = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
-                      omega_samples, args.cores)
+                      omega_samples)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
     save_seismogram(seismogram, t_samples, header, args.filename)
