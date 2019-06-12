@@ -1,7 +1,9 @@
+import ast
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
+import re
 
 
 def read_stations(filepath: Path) -> np.ndarray:
@@ -14,6 +16,63 @@ def read_stations(filepath: Path) -> np.ndarray:
     """
     stations = np.genfromtxt(filepath, skip_header=1, usecols=(1, 2, 3))
     return stations
+
+
+def read_sources(filepath: Path) -> np.ndarray:
+    """
+    Read sources from text file and return (N, 3) array of source coordinates.
+    """
+    int_regex = r"(\d+)"
+    float_regex = r"(?:\d+(?:\.\d*)?|\.\d+)"
+    number_of_sources_regex = fr"nsrc\s+=\s+(?P<nsrc>{int_regex})"
+    x_regex = fr"xsource\s+=\s+(?P<xsource>{float_regex})"
+    y_regex = fr"ysource\s+=\s+(?P<ysource>{float_regex})"
+    z_regex = fr"zsource\s+=\s+(?P<zsource>{float_regex})"
+    # save name of regex group as key, which can later be used to retrieve the
+    # matched value
+    regexes = {"nsrc": number_of_sources_regex,
+               "xsource": x_regex,
+               "ysource": y_regex,
+               "zsource": z_regex}
+
+    def match_line(line: str) -> Union[Tuple[str, Union[int, float]],
+                                       Tuple[None, None]]:
+        """
+        Match all regexes against a line and return either the first matching
+        one or a tuple(None, None) if no regexes matched the line.
+        :return: A tuple of the key to the regex that matched and an interpreted
+        value (int or float)
+        """
+        for key, regex in regexes.items():
+            match = re.search(regex, line)
+            if match:
+                value = ast.literal_eval(match.group(key))
+                return key, value
+        return None, None
+
+    x_values, y_values, z_values = [], [], []
+    nsrc = None
+    with open(filepath, "r") as f:
+        for line in f:
+            key, value = match_line(line)
+            if key is None:
+                continue
+            elif key == "nsrc" and nsrc is None:
+                nsrc = value
+            elif key == "xsource":
+                x_values.append(value)
+            elif key == "ysource":
+                y_values.append(value)
+            elif key == "zsource":
+                z_values.append(value)
+
+        sources = np.array([(x, y, z) for x, y, z in
+                            zip(x_values, y_values, z_values)])
+        if len(sources) != nsrc:
+            raise ValueError(f"Expected {nsrc} stations in file {filepath} but "
+                             f"got only {len(sources)}.")
+        return sources
+
 
 def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str,
                     filename: str) -> None:
