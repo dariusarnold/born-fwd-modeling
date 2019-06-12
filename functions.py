@@ -6,8 +6,8 @@ import numpy as np
 import quadpy
 from tqdm import tqdm
 
-from VelocityModel import AbstractVelocityModel
 from units import Hertz, RadiansPerSecond, Seconds
+from velocity_model import AbstractVelocityModel
 
 
 def set_number_numpy_threads(threads: int):

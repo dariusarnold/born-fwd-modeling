@@ -3,7 +3,7 @@ import importlib
 
 import numpy as np
 
-from VelocityModel import VelocityModel, AbstractVelocityModel
+from velocity_model import VelocityModel, AbstractVelocityModel
 from functions import angular, born, time_samples, create_header, \
     save_seismogram, frequency_samples
 from units import Hertz
@@ -84,7 +84,7 @@ def setup_parser() -> argparse.ArgumentParser:
     p.add_argument("-c", "--cores", type=int, help=("Number of cores for "
                    "parallelization. If not specified, numpys default value "
                    "will be kept."))
-    p.add_argument("-m", "--model", type=velocity_model, default="VelocityModel.py",
+    p.add_argument("-m", "--model", type=velocity_model, default="marcellus.py",
                    help=("Specify file from which the velocity model is created."
                          "The file should contain a create_velocity_model "
                          "function that returns a VelocityModel object, which "

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from VelocityModel import VelocityModel
+from velocity_model import VelocityModel
 
 
 def plot_fractures(velocity_model: VelocityModel) -> None:
