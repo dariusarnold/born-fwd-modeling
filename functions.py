@@ -3,7 +3,7 @@ import os
 from typing import List, Sequence
 
 import numpy as np
-import quadpy
+from quadpy.ball import integrate, Stroud
 from tqdm import tqdm
 
 from units import Hertz, RadiansPerSecond, Seconds
@@ -26,16 +26,20 @@ def set_number_numpy_threads(threads: int):
 #set_number_numpy_threads(1)
 
 
-def born_all_scatterers(xs: np.ndarray, xr: np.ndarray, velocity_model: AbstractVelocityModel,
-                        omega: RadiansPerSecond, omega_central: RadiansPerSecond) -> complex:
+def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
+                        velocity_model: AbstractVelocityModel,
+                        omega: RadiansPerSecond,
+                        omega_central: RadiansPerSecond) -> np.ndarray:
     """
     Calculate born scattering for all scatterer positions
     This implements eq. (1) from
-    3D seismic characterization of fractures in a dipping layer using the double-beam method
+    3D seismic characterization of fractures in a dipping layer using the
+    double-beam method
     Hao Hu and Yingcai Zheng
     :param xs: Source position
     :param xr: Receiver position
-    :param velocity_model: Model containing geometry of scatterers, velocities and density
+    :param velocity_model: Model containing geometry of scatterers, velocities
+    and density
     :param omega: Angular frequency of this sample
     :param omega_central: Central frequency of ricker source wavelet
     :return: Value of single frequency bin of the scattered P wave
@@ -45,10 +49,11 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray, velocity_model: Abstract
         """
         Calculate complex exp by Eulers formula using cos(x) + i sin(x).
         Interestingly in numpy a complex exp takes more time to compute than the
-        expanded version from eulers formula see:
+        expanded version from eulers formula, see:
         https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148
-        This version is taken from above link and is even faster than a simple cos+isin
-        since
+        This version is taken from above link and is even faster than a simple
+        cos+isin since you avoid intermediate temporary arrays and needless
+        copying.
         :param exp_term: The argument of the complex exp without imaginary i
         :return: Numpy array of complex values
         """
@@ -68,43 +73,56 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray, velocity_model: Abstract
         lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        # arguments of exp are reordered resulting in only one multiplication of lengths
-        return 1./lengths * complex_exp(-omega * (1. / velocity_model.fracture_velocity) * lengths)
+        # arguments of exp are reordered compared to the formula fromt the paper,
+        # resulting in only one multiplication of lengths by a scalar
+        return 1./lengths * complex_exp(-omega * (1. / frac_vel) * lengths)
 
     def integral(x):
         """
+        Inner function of the integral equation (1) from Hu2018.
+        Constant factors are moved out of the integral and are multiplied later.
         x is a np array containing all points to be evaluated.
         Its shape is (3, M, N) where M is the number of scatterer midpoints
         returned by create_scatterers and N is the number of evaluation points
         chosen by quadpy. The first axis is fixed (3). It represents the x, y, z
         values, eg. x[0] contains all x values of all points.
         """
-        epsilon = scattering_potential(velocity_model.fracture_velocity, velocity_model.background_velocity)
+        epsilon = scattering_potential(frac_vel, bg_vel)
         # extend the 3D vector from shape (3,) to (3, 1, 1) so numpy
         # broadcasting works as expected
         G0_left = greens_function_vectorized(xs[:, None, None], x)
         G0_right = greens_function_vectorized(x, xr[:, None, None])
         return G0_left * epsilon * G0_right
 
-    scatterer_radii = np.full(len(velocity_model.scatterer_positions), velocity_model.scatterer_radius)
-    integration_scheme = quadpy.ball.Stroud("S3 3-1")
+    frac_vel = velocity_model.fracture_velocity
+    bg_vel = velocity_model.background_velocity
+    scatterer_radii = np.full(len(velocity_model.scatterer_positions),
+                              velocity_model.scatterer_radius)
+    integration_scheme = Stroud("S3 3-1")
     # sum over the result from all scatterer points
-    res = np.sum(quadpy.ball.integrate(integral, velocity_model.scatterer_positions, scatterer_radii,
-                                       integration_scheme))
+    res = np.sum(integrate(integral, velocity_model.scatterer_positions,
+                           scatterer_radii, integration_scheme))
     res *= ricker_frequency_domain(omega, omega_central) * omega**2
-    res *= 1 / (4. * np.pi * velocity_model.density * velocity_model.background_velocity**2)
+    res *= 1 / (4. * np.pi * velocity_model.density * bg_vel**2)
     return res
 
-def born(source_pos: np.ndarray, receiver_pos: np.ndarray, velocity_model: AbstractVelocityModel,
-         omega_central: RadiansPerSecond, omega_samples: Sequence[RadiansPerSecond],
+
+def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
+         velocity_model: AbstractVelocityModel,
+         omega_central: RadiansPerSecond,
+         omega_samples: Sequence[RadiansPerSecond],
          quiet: bool = False) -> np.ndarray:
     """
-    Loop over frequency samples to create frequency spectrum of scattered P wave and backtransform
-    into a time domain signal.
+    Loop over frequency samples to create frequency spectrum of scattered P wave
+    and backtransform into a time domain signal.
     """
     p_wave_spectrum: List[complex] = []
-    for omega in tqdm(omega_samples, desc="Born modeling", total=len(omega_samples), unit="frequency samples", disable=quiet):
-        u_scattering = born_all_scatterers(source_pos, receiver_pos, velocity_model, omega, omega_central)
+    omegas_iterator = tqdm(omega_samples, desc="Born modeling",
+                           unit="frequency samples",
+                           disable=quiet, leave=False)
+    for omega in omegas_iterator:
+        u_scattering = born_all_scatterers(source_pos, receiver_pos,
+                                           velocity_model, omega, omega_central)
         p_wave_spectrum.append(u_scattering)
     time_domain = np.real(np.fft.ifft(p_wave_spectrum))
     return time_domain
@@ -116,8 +134,8 @@ def angular(f: Hertz) -> RadiansPerSecond:
 
 def frequency_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.ndarray:
     """
-    Calculate frequency samples required to reach the given length and sample period after
-    the inverse Fourier transform.
+    Calculate frequency samples required to reach the given length and sample
+    period after the inverse Fourier transform.
     """
     num_of_samples = int(timeseries_length / sample_period)
     delta_omega = 2*math.pi / timeseries_length
@@ -127,21 +145,25 @@ def frequency_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.
 
 
 def time_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.ndarray:
-    """Calculate all time points between 0 and time series_length when the time series is sampled
-    with the given period."""
+    """
+    Calculate all time points between 0 and time series_length when the time
+    series is sampled with the given period.
+    """
     num_of_samples = int(timeseries_length / sample_period)
     return np.linspace(0, timeseries_length, num_of_samples)
 
 
-def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str, filename: str):
+def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str,
+                    filename: str) -> None:
     # transpose stacked arrays to save them as columns instead of rows
     np.savetxt(filename, np.vstack((time_steps, seismogram)).T, header=header)
 
 
 def create_header(source_pos: np.ndarray, receiver_pos: np.ndarray) -> str:
     """
-    Create header string containing information about the seismogram from the arguments used to
-    create it. This information will be saved as a header in the seismogram file.
+    Create header string containing information about the seismogram from the
+    arguments used to create it. This information will be saved as a header in
+    the seismogram file.
     """
     h = f"source: {source_pos}\nreceiver: {receiver_pos}"
     return h
@@ -154,7 +176,8 @@ def ricker_frequency_domain(omega: float, omega_central: float) -> float:
     :param omega_central: Central or dominant frequency
     :return: Value of frequency spectrum of a Ricker wavelet
     """
-    return 2 * omega**2 / (math.sqrt(math.pi) * omega_central**3) * math.exp(- omega**2 / omega_central**2)
+    return 2 * omega**2 / (math.sqrt(math.pi) * omega_central**3) \
+           * math.exp(- omega**2 / omega_central**2)
 
 
 def scattering_potential(v: float, v0: float) -> float:
