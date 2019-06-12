@@ -4,8 +4,8 @@ import importlib
 import numpy as np
 
 from bornfwd.velocity_model import VelocityModel, AbstractVelocityModel
-from bornfwd.functions import angular, born, time_samples, create_header, \
-    save_seismogram, frequency_samples
+from bornfwd.functions import angular, born, time_samples, frequency_samples
+from bornfwd.io import save_seismogram, create_header
 from bornfwd.plotting import plot_time_series
 from bornfwd.units import Hertz
 

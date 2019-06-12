@@ -153,22 +153,6 @@ def time_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.ndarr
     return np.linspace(0, timeseries_length, num_of_samples)
 
 
-def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str,
-                    filename: str) -> None:
-    # transpose stacked arrays to save them as columns instead of rows
-    np.savetxt(filename, np.vstack((time_steps, seismogram)).T, header=header)
-
-
-def create_header(source_pos: np.ndarray, receiver_pos: np.ndarray) -> str:
-    """
-    Create header string containing information about the seismogram from the
-    arguments used to create it. This information will be saved as a header in
-    the seismogram file.
-    """
-    h = f"source: {source_pos}\nreceiver: {receiver_pos}"
-    return h
-
-
 def ricker_frequency_domain(omega: float, omega_central: float) -> float:
     """
     Taken from Frequencies of the Ricker wavelet by Yanghua Wang (eq. 7)
