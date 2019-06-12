@@ -19,12 +19,13 @@ def plot_fractures(velocity_model: VelocityModel) -> None:
     plt.show()
 
 
-def plot_time_series(time_series: np.ndarray) -> None:
+def plot_time_series(data: np.ndarray, timesteps: np.ndarray,
+                     time_unit: str = "s") -> None:
     """Plot the seismogram generated from Born modeling as a time series"""
-    plt.plot(np.real(time_series))
+    plt.plot(timesteps, np.real(data))
     plt.title("Time series from Born scattering")
     plt.ylabel("Amplitude")
-    plt.xlabel("Sample")
+    plt.xlabel(f"t ({time_unit})")
     plt.show()
 
 
@@ -35,7 +36,7 @@ def plot_seismogram_gather(seismograms: np.ndarray) -> None:
     # invert y axis so origin is in top left
     plt.ylim(plt.ylim()[::-1])
     # ugly and overly specific way to limit the plotting to 1.5-3 secs
-    # this is valied for 4 secs trace length with dt = 0.004 s
+    # this is valid for 4 secs trace length with dt = 0.004 s
     plt.ylim(ymin=750, ymax=375)
     # label y axis with seconds
     plt.yticks(np.linspace(375, 750, 4), [f"{x:.2f}" for x in np.linspace(1.5, 3, 4)])
