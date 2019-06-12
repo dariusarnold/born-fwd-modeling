@@ -68,6 +68,9 @@ def read_sources(filepath: Path) -> np.ndarray:
 
         sources = np.array([(x, y, z) for x, y, z in
                             zip(x_values, y_values, z_values)])
+        if nsrc is None:
+            raise ValueError(f"Number of sources (nsrc) not specified in file"
+                             f"{filepath}")
         if len(sources) != nsrc:
             raise ValueError(f"Expected {nsrc} stations in file {filepath} but "
                              f"got only {len(sources)}.")
