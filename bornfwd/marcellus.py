@@ -3,8 +3,8 @@ from typing import Iterator, Tuple
 
 import numpy as np
 
-from units import Meter, MetersPerSecond, KgPerCubicMeter
-from velocity_model import VelocityModel
+from bornfwd.units import Meter, MetersPerSecond, KgPerCubicMeter
+from bornfwd.velocity_model import VelocityModel
 
 
 def create_scatterers() -> np.ndarray:

@@ -4,7 +4,7 @@ from typing import Tuple, Iterator
 
 import numpy as np
 
-from units import MetersPerSecond, KgPerCubicMeter, Meter
+from bornfwd.units import MetersPerSecond, KgPerCubicMeter, Meter
 
 
 class AbstractVelocityModel(abc.ABC):

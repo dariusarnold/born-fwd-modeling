@@ -3,10 +3,11 @@ import importlib
 
 import numpy as np
 
-from velocity_model import VelocityModel, AbstractVelocityModel
-from functions import angular, born, time_samples, create_header, \
+from bornfwd.velocity_model import VelocityModel, AbstractVelocityModel
+from bornfwd.functions import angular, born, time_samples, create_header, \
     save_seismogram, frequency_samples
-from units import Hertz
+from bornfwd.plotting import plot_time_series
+from bornfwd.units import Hertz
 
 
 def setup_parser() -> argparse.ArgumentParser:
@@ -114,6 +115,7 @@ def main() -> None:
                       omega_samples, args.quiet)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
+    plot_time_series(seismogram, t_samples)
     save_seismogram(seismogram, t_samples, header, args.filename)
 
 

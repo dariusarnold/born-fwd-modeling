@@ -6,8 +6,8 @@ import numpy as np
 from quadpy.ball import integrate, Stroud
 from tqdm import tqdm
 
-from units import Hertz, RadiansPerSecond, Seconds
-from velocity_model import AbstractVelocityModel
+from bornfwd.units import Hertz, RadiansPerSecond, Seconds
+from bornfwd.velocity_model import AbstractVelocityModel
 
 
 def set_number_numpy_threads(threads: int):

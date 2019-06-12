@@ -4,10 +4,10 @@ from typing import List, Tuple
 
 import numpy as np
 
-from marcellus import create_velocity_model
-from functions import born, time_samples, create_header, save_seismogram, angular, frequency_samples
-from plotting import plot_seismogram_gather
-from units import Seconds, RadiansPerSecond, KgPerCubicMeter, MetersPerSecond, Meter
+from bornfwd.marcellus import create_velocity_model
+from bornfwd.functions import born, time_samples, create_header, save_seismogram, angular, frequency_samples
+from bornfwd.plotting import plot_seismogram_gather
+from bornfwd.units import Seconds, RadiansPerSecond, KgPerCubicMeter, MetersPerSecond, Meter
 
 """
 This script generates data to recreate fig. 5b) from the paper 3D seismic 
