@@ -75,7 +75,7 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         # transforms to cos(-x) + i * sin(-x)
         # arguments of exp are reordered compared to the formula fromt the paper,
         # resulting in only one multiplication of lengths by a scalar
-        return 1./lengths * complex_exp(-omega * (1. / frac_vel) * lengths)
+        return 1./lengths * complex_exp(-omega * (1. / bg_vel) * lengths)
 
     def integral(x):
         """
