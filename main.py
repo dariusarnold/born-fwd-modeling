@@ -4,7 +4,8 @@ import importlib
 import numpy as np
 
 from VelocityModel import VelocityModel, AbstractVelocityModel
-from functions import angular, born, time_samples, create_header, save_seismogram, frequency_samples
+from functions import angular, born, time_samples, create_header, \
+    save_seismogram, frequency_samples
 from units import Hertz
 
 
@@ -56,42 +57,48 @@ def setup_parser() -> argparse.ArgumentParser:
             for name, value in zip(names, values):
                 setattr(namespace, name, value)
 
-    program_description = ("Use born modelling to generate seismic recordings from fracture "
-                           "scattered waves.")
-    parser = argparse.ArgumentParser(description=program_description,
-                                     fromfile_prefix_chars="@")
+    program_description = ("Use born modelling to generate seismic recordings "
+                           "from fracture scattered waves.")
+    p = argparse.ArgumentParser(description=program_description,
+                                fromfile_prefix_chars="@")
     # Even though making optional arguments required is against command line
     # conventions, this is the only way to use metavars to specify order of
     # coordinates
     # see https://bugs.python.org/issue14074
-    parser.add_argument("-s", "--source_pos", nargs=3, type=float, action=ConvertToNumpyArray,
-                        metavar=("XS", "YS", "ZS"), required=True,
-                        help="coordinates of source (shot position) in m")
-    parser.add_argument("-r", "--receiver_pos", nargs=3, type=float, action=ConvertToNumpyArray,
-                        metavar=("XR", "YR", "ZR"), required=True,
-                        help="coordinates of receiver (geophone position) in m")
-    parser.add_argument("filename", type=str, metavar="output_filename",
-                        help="Filename in which results will be saved")
-    parser.add_argument("-w", "--omega_central", type=angular,
-                        metavar="HZ", default=angular(Hertz(30.)),
-                        help="Central frequency of Ricker source wavelet in Hz")
-    parser.add_argument("-t", "--time", nargs=2, type=float, metavar=("LENGTH", "SAMPLEPERIOD"),
-                        help="Length of output time series in s and sample rate in s.",
-                        action=AddNargsAsAttributesAction, dest="timeseries_length sample_period")
-    parser.add_argument("-c", "--cores", type=int, help=("Number of cores for parallelization. "
-                        "If not specified, numpys default value will be kept."))
-    parser.add_argument("-m", "--model", type=velocity_model, default="VelocityModel.py",
-                        help=("Specify file from which the velocity model is created. The file "
-                              "should contain a create_velocity_model function that returns a "
-                              "VelocityModel object, which contains model data such as density and "
-                              "velocity as well as scatterer positions in a (N, 3) shape array "
-                              "where N are the number of scatterer points and the second axis "
-                              "contains the (x, y, z) sequence of coordinates for every point. "
-                              "An abstract base class that has to be overridden is provided in "
-                              "VelocityModel.py"))
-    parser.add_argument("-q", "--quiet", action="store_true", help=("Flag to disable performance "
-                        "output (iterations per second)."))
-    return parser
+    p.add_argument("-s", "--source_pos", nargs=3, type=float, required=True,
+                   action=ConvertToNumpyArray, metavar=("XS", "YS", "ZS"),
+                   help="coordinates of source (shot position) in m")
+    p.add_argument("-r", "--receiver_pos", nargs=3, type=float, required=True,
+                   action=ConvertToNumpyArray, metavar=("XR", "YR", "ZR"),
+                   help="coordinates of receiver (geophone position) in m")
+    p.add_argument("filename", type=str, metavar="output_filename",
+                   help="Filename in which results will be saved")
+    p.add_argument("-w", "--omega_central", type=angular,
+                   metavar="HZ", default=angular(Hertz(30.)),
+                   help="Central frequency of Ricker source wavelet in Hz")
+    p.add_argument("-t", "--time", nargs=2, type=float,
+                   metavar=("LENGTH", "SAMPLEPERIOD"),
+                   help="Length of output time series (s) and sample rate (s).",
+                   action=AddNargsAsAttributesAction,
+                   dest="timeseries_length sample_period")
+    p.add_argument("-c", "--cores", type=int, help=("Number of cores for "
+                   "parallelization. If not specified, numpys default value "
+                   "will be kept."))
+    p.add_argument("-m", "--model", type=velocity_model, default="VelocityModel.py",
+                   help=("Specify file from which the velocity model is created."
+                         "The file should contain a create_velocity_model "
+                         "function that returns a VelocityModel object, which "
+                         "contains model data such as density and velocity as "
+                         "well as scatterer positions in a (N, 3) shape array."
+                         "N are the number of scatterer points and the second "
+                         "axis contains the (x, y, z) sequence of coordinates "
+                         "for every point. An abstract base class for your "
+                         "own models to derive from is provided in "
+                         "VelocityModel.py. Deriving from this class ensures "
+                         "that the model has defined all required attributes."))
+    p.add_argument("-q", "--quiet", action="store_true", help=("Flag to disable "
+                   "performance output (iterations per second)."))
+    return p
 
 
 def main() -> None:
