@@ -72,8 +72,9 @@ def setup_parser() -> argparse.ArgumentParser:
     p.add_argument("-r", "--receiver_pos", nargs=3, type=float, required=True,
                    action=ConvertToNumpyArray, metavar=("XR", "YR", "ZR"),
                    help="coordinates of receiver (geophone position) in m")
-    p.add_argument("filename", type=str, metavar="output_filename",
-                   help="Filename in which results will be saved")
+    p.add_argument("filename", type=str, metavar="output_filename", nargs="?",
+                   help="Filename in which results will be saved. If no name is "
+                   "specified, the output won't be saved to a file.")
     p.add_argument("-w", "--omega_central", type=angular,
                    metavar="HZ", default=angular(Hertz(30.)),
                    help="Central frequency of Ricker source wavelet in Hz")
@@ -116,7 +117,8 @@ def main() -> None:
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
     plot_time_series(seismogram, t_samples)
-    save_seismogram(seismogram, t_samples, header, args.filename)
+    if args.filename is not None:
+        save_seismogram(seismogram, t_samples, header, args.filename)
 
 
 if __name__ == '__main__':
