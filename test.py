@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from bornfwd.marcellus import create_velocity_model
+from marcellus import create_velocity_model
 from bornfwd.functions import born, time_samples, angular, frequency_samples
 from bornfwd.io import save_seismogram, create_header, load_seismograms
 from bornfwd.plotting import plot_seismogram_gather

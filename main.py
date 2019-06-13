@@ -10,7 +10,7 @@ from bornfwd.plotting import plot_time_series
 from bornfwd.units import Hertz
 
 
-def setup_parser() -> argparse.ArgumentParser:
+def _setup_parser() -> argparse.ArgumentParser:
     def velocity_model(fname: str) -> VelocityModel:
         """Create VelocityModel from given VelocityModel file name.
         This function imports the file as a module and looks for a
@@ -105,12 +105,12 @@ def setup_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main() -> None:
+def oneshot() -> None:
     """
     Read command line arguments, create a seismogram by born modeling and save
     it to a file or plot it.
     """
-    parser = setup_parser()
+    parser = _setup_parser()
     args = parser.parse_args()
 
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
@@ -125,4 +125,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    oneshot()

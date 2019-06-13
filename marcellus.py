@@ -6,12 +6,17 @@ import numpy as np
 from bornfwd.units import Meter, MetersPerSecond, KgPerCubicMeter
 from bornfwd.velocity_model import VelocityModel
 
+"""
+This file creates a velocity model for the marcellus shale. This model can be 
+used to recreate data from the paper
+3D seismic characterization of fractures in a dipping layer using the 
+double-beam method (Hao Hu and Yingcai Zheng, 2018)
+"""
+
 
 def create_scatterers() -> np.ndarray:
     """
-    Create a list of scatterer positions for the model described in 3D seismic
-    characterization of fractures in a dipping layer using the double-beam
-    method (Hao Hu and Yingcai Zheng, 2018)
+    Create a list of scatterer positions for the model
     """
     model_width = Meter(11200.)
     # values taken from Fig4 in Hu2018a, all units m
@@ -40,9 +45,7 @@ def create_scatterers() -> np.ndarray:
 
 def create_velocity_model() -> VelocityModel:
     """
-    Create a complete velocity model such as the one described in 3D seismic
-    characterization of fractures in a dipping layer using the double-beam
-    method (Hao Hu and Yingcai Zheng, 2018)
+    Create a complete velocity model
     """
     background_vel = MetersPerSecond(4800.)
     fracture_vel = MetersPerSecond(4320.)
