@@ -21,22 +21,22 @@ def generate_seismograms():
     t_samples = time_samples(length, sample_period)
     vm = create_velocity_model()
     with open("timing.txt", "w", buffering=1) as f:
-        for index, receiver_pos in enumerate(receivers):
-            before = time.time()
-            seismogram = born(source_pos, receiver_pos, vm, omega_central, f_samples)
-            header = create_header(receiver_pos, source_pos)
-            fname = output_filename.format(id=index)
-            save_seismogram(seismogram, t_samples, header, fname)
-            after = time.time()
-            runtime = after - before
-            f.write(f"Iteration {index:03d}: {runtime} s\n")
+        before = time.time()
+        seismograms = born(source_pos.T, receivers, vm, omega_central, f_samples)
+        after = time.time()
+        runtime = after - before
+        f.write(f"Runtime: {runtime} s\n")
+    for index, seismogram in enumerate(seismograms):
+        header = create_header(receivers[index], source_pos)
+        fname = output_filename.format(id=index)
+        save_seismogram(seismogram, t_samples, header, fname)
 
 
 if __name__ == '__main__':
     #
     # parameters set so that same data as in paper is generated
     #
-    source_pos = np.array((11200., 5600., 10.))
+    source_pos = np.array(((11200., 5600., 10.), (4260., 4407., 10.), (0., 0., 0.,)))
     omega_central: RadiansPerSecond = angular(30.)
     length: Seconds = 4
     sample_period: Seconds = 0.004
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     # generate line of receivers with similar geometry as the one in the paper
     from scripts.create_sample_receiverfile import create_receivers
-    receivers = create_receivers()
+    receivers = create_receivers().T
 
     seismograms = generate_seismograms()
     seismos, *_ = load_seismograms(Path(output_filename).parent, "receiver_*.txt")

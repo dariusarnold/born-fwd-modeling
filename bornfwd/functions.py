@@ -70,7 +70,7 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         """
         # this is an optimized version of linalg.norm
         subtraction = x - x_prime
-        lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction))
+        lengths = np.sqrt(np.einsum("ijkl,ijkl->jkl", subtraction, subtraction))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
         # arguments of exp are reordered compared to the formula fromt the paper,
@@ -87,22 +87,29 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         chosen by quadpy. The first axis is fixed (3). It represents the x, y, z
         values, eg. x[0] contains all x values of all points.
         """
-        epsilon = scattering_potential(frac_vel, bg_vel)
-        # extend the 3D vector from shape (3,) to (3, 1, 1) so numpy
-        # broadcasting works as expected
-        G0_left = greens_function_vectorized(xs[:, None, None], x)
-        G0_right = greens_function_vectorized(x, xr[:, None, None])
-        return G0_left * epsilon * G0_right
+        # add empty last axis to x. This axis will be broadcasted to the number
+        # of source points
+        # extend the 3D vector (source and receiver positions) from shape (3, A)
+        # or (3, B) to (3, 1, 1, A) or (3, 1, 1, B) so numpy broadcasting works
+        # as expected
+        G0_left = greens_function_vectorized(xs[:, None, None, :], x[..., None])
+        G0_right = greens_function_vectorized(x[..., None], xr[:, None, None, :])
+        res = G0_left[..., None] * np.expand_dims(G0_right, -2)
+        res = np.moveaxis(res, -1, 0)
+        res = np.moveaxis(res, -1, 0)
+        return res
 
     frac_vel = velocity_model.fracture_velocity
     bg_vel = velocity_model.background_velocity
+    epsilon = scattering_potential(frac_vel, bg_vel)
     scatterer_radii = np.full(len(velocity_model.scatterer_positions),
                               velocity_model.scatterer_radius)
     integration_scheme = Stroud("S3 3-1")
     # sum over the result from all scatterer points
-    res = np.sum(integrate(integral, velocity_model.scatterer_positions,
-                           scatterer_radii, integration_scheme))
-    res *= ricker_frequency_domain(omega, omega_central) * omega**2
+    res = integrate(integral, velocity_model.scatterer_positions,
+                    scatterer_radii, integration_scheme)
+    res = np.sum(res, axis=-1)
+    res *= ricker_frequency_domain(omega, omega_central) * omega**2 * epsilon
     res *= 1 / (4. * np.pi * velocity_model.density * bg_vel**2)
     return res
 
@@ -115,15 +122,19 @@ def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
     """
     Loop over frequency samples to create frequency spectrum of scattered P wave
     and backtransform into a time domain signal.
-    :param source_pos: (3,) array of x y z coordinates of the source
-    :param receiver_pos: (3,) array of x y z coordinates of the receiver
+    :param source_pos: (A, 3) array of A (x y z) coordinates of A source
+    positions
+    :param receiver_pos: (B, 3) array of B (x y z) coordinates of B receiver
+    positions
     :param velocity_model: Velocity model instance containg scatterer positions
     and other data
     :param omega_central: Central frequency for Ricker source wavelet
     :param omega_samples: Sequence of angular frequencies
     :param quiet: If True, progress bar output is disabled
-    :return: Time domain signal (seismogram)
+    :return: Time domain signal (seismograms) for all source/receiver
+    combinations
     """
+    # TODO  add checking for correct dimensionality of source/receiver arrays with documentation and exceptions
     p_wave_spectrum: List[complex] = []
     omegas_iterator = tqdm(omega_samples, desc="Born modeling",
                            unit="frequency samples",
@@ -132,7 +143,13 @@ def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
         u_scattering = born_all_scatterers(source_pos, receiver_pos,
                                            velocity_model, omega, omega_central)
         p_wave_spectrum.append(u_scattering)
-    time_domain = np.real(np.fft.ifft(p_wave_spectrum))
+    p_wave_spectrum: np.ndarray = np.array(p_wave_spectrum)
+    # axis 0 contains the time samples
+    time_domain = np.real(np.fft.ifft(p_wave_spectrum, axis=0))
+    # shape is (N, A, B) where N is the number of time samples, A the number of
+    # sources and B the number of receivers. Move N to the back to be able to
+    # select seismograms for source/receiver combinations
+    time_domain = np.moveaxis(time_domain, 0, -1)
     return time_domain
 
 

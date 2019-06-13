@@ -151,12 +151,13 @@ def oneshot(args) -> None:
     Create a seismogram by born modeling and save it to a file or plot it.
     """
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
-    seismogram = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
+    # transpose positions from (N, 3) to (3, N) for broadcasting
+    seismogram = born(np.reshape(args.source_pos, (3, 1)), np.reshape(args.receiver_pos, (3, 1)), args.model, args.omega_central,
                       omega_samples, args.quiet)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
     if args.plot is True:
-        plot_time_series(seismogram, t_samples)
+        plot_time_series(np.squeeze(seismogram), t_samples)
     if args.filename is not None:
         save_seismogram(seismogram, t_samples, header, args.filename)
 
