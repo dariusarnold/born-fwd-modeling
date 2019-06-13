@@ -115,6 +115,14 @@ def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
     """
     Loop over frequency samples to create frequency spectrum of scattered P wave
     and backtransform into a time domain signal.
+    :param source_pos: (3,) array of x y z coordinates of the source
+    :param receiver_pos: (3,) array of x y z coordinates of the receiver
+    :param velocity_model: Velocity model instance containg scatterer positions
+    and other data
+    :param omega_central: Central frequency for Ricker source wavelet
+    :param omega_samples: Sequence of angular frequencies
+    :param quiet: If True, progress bar output is disabled
+    :return: Time domain signal (seismogram)
     """
     p_wave_spectrum: List[complex] = []
     omegas_iterator = tqdm(omega_samples, desc="Born modeling",
