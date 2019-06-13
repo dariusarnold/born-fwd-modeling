@@ -1,11 +1,13 @@
 import argparse
 import importlib
+import itertools
+from pathlib import Path
 
 import numpy as np
 
 from bornfwd.velocity_model import VelocityModel, AbstractVelocityModel
 from bornfwd.functions import angular, born, time_samples, frequency_samples
-from bornfwd.io import save_seismogram, create_header
+from bornfwd.io import save_seismogram, create_header, read_stations, read_sources
 from bornfwd.plotting import plot_time_series
 from bornfwd.units import Hertz
 
@@ -127,7 +129,7 @@ def _setup_parser() -> argparse.ArgumentParser:
     fullmodel_p.add_argument("-s", "--sourcefile", required=True,
                              help="Specify file from which source coordinates "
                                   "are read.")
-    fullmodel_p.add_argument("-r", "--receivers", required=True,
+    fullmodel_p.add_argument("-r", "--receiverfile", required=True,
                              help="Specify file from which receiver coordinates"
                                   "are read.")
     fullmodel_p.set_defaults(func=fullmodel)
@@ -160,7 +162,24 @@ def oneshot(args) -> None:
 
 
 def fullmodel(args) -> None:
-    print(args)
+    omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
+    t_samples = time_samples(args.timeseries_length, args.sample_period)
+    receivers = read_stations(Path(args.receiverfile))
+    sources = read_sources(Path(args.sourcefile))
+    output_folder = Path("output")
+    for source_index, source_pos in enumerate(sources, start=1):
+        sourcepath = output_folder / f"source_{source_index:03d}"
+        try:
+            sourcepath.mkdir()
+        except FileExistsError:
+            pass
+        for receiver_index, receiver_pos in enumerate(receivers):
+            seismogram = born(source_pos, receiver_pos, args.model,
+                              args.omega_central, omega_samples, args.quiet)
+            header = create_header(source_pos, receiver_pos)
+            seismopath = sourcepath / f"receiver_{receiver_index:03d}.txt"
+            save_seismogram(seismogram, t_samples, header, seismopath)
+
 
 
 if __name__ == '__main__':
