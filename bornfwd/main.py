@@ -100,13 +100,15 @@ def setup_parser() -> argparse.ArgumentParser:
                          "that the model has defined all required attributes."))
     p.add_argument("-q", "--quiet", action="store_true", help=("Flag to disable "
                    "performance output (iterations per second)."))
+    p.add_argument("-p", "--plot", action="store_true", help=("If flag is "
+                   "specified, plot the trace and show plot window."))
     return p
 
 
 def main() -> None:
     """
     Read command line arguments, create a seismogram by born modeling and save
-    it to a file.
+    it to a file or plot it.
     """
     parser = setup_parser()
     args = parser.parse_args()
@@ -116,7 +118,8 @@ def main() -> None:
                       omega_samples, args.quiet)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
-    plot_time_series(seismogram, t_samples)
+    if args.plot is True:
+        plot_time_series(seismogram, t_samples)
     if args.filename is not None:
         save_seismogram(seismogram, t_samples, header, args.filename)
 
