@@ -36,9 +36,6 @@ if __name__ == '__main__':
     #
     # parameters set so that same data as in paper is generated
     #
-    start_receiver = np.array((5272., 3090., 0.))
-    end_receiver = np.array((3090., 5430., 0.))
-    num_of_receivers = 100
     source_pos = np.array((11200., 5600., 10.))
     omega_central: RadiansPerSecond = angular(30.)
     length: Seconds = 4
@@ -49,9 +46,8 @@ if __name__ == '__main__':
     f_samples = frequency_samples(length, sample_period)
 
     # generate line of receivers with similar geometry as the one in the paper
-    receivers_x = np.linspace(start_receiver[0], end_receiver[0], num_of_receivers)
-    receivers_y = np.linspace(start_receiver[1], end_receiver[1], num_of_receivers)
-    receivers = np.array([(x, y, 0.) for x, y in zip(receivers_x, receivers_y)])
+    from scripts.create_sample_receiverfile import create_receivers
+    receivers = create_receivers()
 
     seismograms = generate_seismograms()
     seismos, *_ = load_seismograms(Path(output_filename).parent, "receiver_*.txt")
