@@ -8,7 +8,7 @@ nsrc            = 3             # Number of sources
 source          = 1
 xsource         = 25.408407         # x coordinate of source
 ysource         = 21.647630         # y coordinate of source
-zsource         = 60.000000         # z coordinate of source
+zsource         = 60.         # z coordinate of source
 sourcetype      = 0         # Type of source: 1 = Moment tensor, 0 = single force
 stf             = 2         # Type of source-time-function: 1 = green, 2 = ricker, 3 = external Wavelet (needs a file called "stf" in the "data" folder)
 f0              = 1000000.000000         # center frequency of sft
@@ -27,7 +27,7 @@ Myz             = 0.            # Momenttensor Mzy
 source          = 2
 xsource         = 24.434352         # x coordinate of source
 ysource         = 21.811987         # y coordinate of source
-zsource         = 60.000000         # z coordinate of source
+zsource         = 60         # z coordinate of source
 sourcetype      = 0         # Type of source: 1 = Moment tensor, 0 = single force
 stf             = 2         # Type of source-time-function: 1 = green, 2 = ricker, 3 = external Wavelet (needs a file called "stf" in the "data" folder)
 f0              = 1000000.000000         # center frequency of sft
