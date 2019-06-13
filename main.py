@@ -62,19 +62,8 @@ def _setup_parser() -> argparse.ArgumentParser:
                            "from fracture scattered waves.")
     p = argparse.ArgumentParser(description=program_description,
                                 fromfile_prefix_chars="@")
-    # Even though making optional arguments required is against command line
-    # conventions, this is the only way to use metavars to specify order of
-    # coordinates
-    # see https://bugs.python.org/issue14074
-    p.add_argument("-s", "--source_pos", nargs=3, type=float, required=True,
-                   action=ConvertToNumpyArray, metavar=("XS", "YS", "ZS"),
-                   help="coordinates of source (shot position) in m")
-    p.add_argument("-r", "--receiver_pos", nargs=3, type=float, required=True,
-                   action=ConvertToNumpyArray, metavar=("XR", "YR", "ZR"),
-                   help="coordinates of receiver (geophone position) in m")
-    p.add_argument("filename", type=str, metavar="output_filename", nargs="?",
-                   help="Filename in which results will be saved. If no name is "
-                   "specified, the output won't be saved to a file.")
+
+    # add general options valid for both commands
     p.add_argument("-w", "--omega_central", type=angular,
                    metavar="HZ", default=angular(Hertz(30.)),
                    help="Central frequency of Ricker source wavelet in Hz")
@@ -98,21 +87,67 @@ def _setup_parser() -> argparse.ArgumentParser:
                          "own models to derive from is provided in "
                          "VelocityModel.py. Deriving from this class ensures "
                          "that the model has defined all required attributes."))
-    p.add_argument("-q", "--quiet", action="store_true", help=("Flag to disable "
-                   "performance output (iterations per second)."))
-    p.add_argument("-p", "--plot", action="store_true", help=("If flag is "
-                   "specified, plot the trace and show plot window."))
+    p.add_argument("-q", "--quiet", action="store_true", help=("Flag to disable"
+                   " performance output (iterations per second)."))
+
+    # add subparsers
+    subparsers_descr = ("These two subcommands differ in the way that source "
+                        "and receiver positions are specified. For a oneshot, "
+                        "a single source and receiver are specified on the "
+                        "command line (or in an options file, see the README). "
+                        "fullmodel requires all source and receiver positions "
+                        "in two seperate files. Their format is again described"
+                        " in the README.")
+    subparsers = p.add_subparsers(description=subparsers_descr)
+
+    # add arguments for oneshot parser
+    oneshot_p = subparsers.add_parser("oneshot", help="Create data for single "
+                                      "source-receiver combination.")
+    oneshot_p.set_defaults(func=oneshot)
+    # Even though making optional arguments required is against command line
+    # conventions, this is the only way to use metavars to specify order of
+    # coordinates
+    # see https://bugs.python.org/issue14074
+    # TODO rewrite to required named arguments group
+    oneshot_p.add_argument("-s", "--source_pos", nargs=3, type=float, required=True,
+                   action=ConvertToNumpyArray, metavar=("XS", "YS", "ZS"),
+                   help="coordinates of source (shot position) in m")
+    oneshot_p.add_argument("-r", "--receiver_pos", nargs=3, type=float, required=True,
+                   action=ConvertToNumpyArray, metavar=("XR", "YR", "ZR"),
+                   help="coordinates of receiver (geophone position) in m")
+    oneshot_p.add_argument("filename", type=str, metavar="output_filename", nargs="?",
+                   help="Filename in which results will be saved. If no name is "
+                   "specified, the output won't be saved to a file.")
+    oneshot_p.add_argument("-p", "--plot", action="store_true", help=("If flag "
+                           "is specified, plot the trace and show plot."))
+
+    # add arguments for fullmodel parser
+    fullmodel_p = subparsers.add_parser("fullmodel", help="Create data multiple"
+                                        " source-receiver combinations.")
+    fullmodel_p.add_argument("-s", "--sourcefile", required=True,
+                             help="Specify file from which source coordinates "
+                                  "are read.")
+    fullmodel_p.add_argument("-r", "--receivers", required=True,
+                             help="Specify file from which receiver coordinates"
+                                  "are read.")
+    fullmodel_p.set_defaults(func=fullmodel)
     return p
 
 
-def oneshot() -> None:
+def main() -> None:
     """
-    Read command line arguments, create a seismogram by born modeling and save
-    it to a file or plot it.
+    Parse arguments and call the function depending on if oneshot or fullmodel
+    subcommand was used, passing the parsed arguments.
     """
     parser = _setup_parser()
     args = parser.parse_args()
+    args.func(args)
 
+
+def oneshot(args) -> None:
+    """
+    Create a seismogram by born modeling and save it to a file or plot it.
+    """
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
     seismogram = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
                       omega_samples, args.quiet)
@@ -124,5 +159,9 @@ def oneshot() -> None:
         save_seismogram(seismogram, t_samples, header, args.filename)
 
 
+def fullmodel(args) -> None:
+    print(args)
+
+
 if __name__ == '__main__':
-    oneshot()
+    main()
