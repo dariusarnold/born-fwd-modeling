@@ -28,21 +28,25 @@ def set_number_numpy_threads(threads: int):
 
 def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
                         velocity_model: AbstractVelocityModel,
-                        omega: RadiansPerSecond,
+                        omega: np.ndarray,
                         omega_central: RadiansPerSecond) -> np.ndarray:
     """
-    Calculate born scattering for all scatterer positions
+    Calculate born scattering for all scatterer positions, receivers and sources
     This implements eq. (1) from
     3D seismic characterization of fractures in a dipping layer using the
     double-beam method
     Hao Hu and Yingcai Zheng
-    :param xs: Source position
-    :param xr: Receiver position
+    :param xs: Source position array, shape (A, 3) where is the number of
+    sources. Second axis is (x, y, z).
+    :param xr: Receiver position array, shape (B, 3) where B is the number of
+    receivers. Second axis is (x, y, z)
     :param velocity_model: Model containing geometry of scatterers, velocities
     and density
-    :param omega: Angular frequency of this sample
+    :param omega: Angular frequencies in (N,) array where N is the number of
+    samples
     :param omega_central: Central frequency of ricker source wavelet
-    :return: Value of single frequency bin of the scattered P wave
+    :return: Frequency spectrum for all source/receiver combinations of the
+    scattered P wave
     """
 
     def complex_exp(exp_term: np.array) -> np.array:
@@ -70,12 +74,12 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         """
         # this is an optimized version of linalg.norm
         subtraction = x - x_prime
-        lengths = np.sqrt(np.einsum("ijkl,ijkl->jkl", subtraction, subtraction))
+        lengths = np.sqrt(np.einsum("ijk,ijk->jk", subtraction, subtraction, optimize=True))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
         # arguments of exp are reordered compared to the formula fromt the paper,
         # resulting in only one multiplication of lengths by a scalar
-        return 1./lengths * complex_exp(-omega * (1. / bg_vel) * lengths)
+        return 1./lengths * complex_exp(-omega[:, None, None] * (1. / bg_vel) * lengths[None, ...])
 
     def integral(x):
         """
@@ -92,12 +96,10 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         # extend the 3D vector (source and receiver positions) from shape (3, A)
         # or (3, B) to (3, 1, 1, A) or (3, 1, 1, B) so numpy broadcasting works
         # as expected
-        G0_left = greens_function_vectorized(xs[:, None, None, :], x[..., None])
-        G0_right = greens_function_vectorized(x[..., None], xr[:, None, None, :])
-        res = G0_left[..., None] * np.expand_dims(G0_right, -2)
-        res = np.moveaxis(res, -1, 0)
-        res = np.moveaxis(res, -1, 0)
-        return res
+        G0_left = greens_function_vectorized(xs[:, None, None], x)
+        G0_right = greens_function_vectorized(x, xr[:, None, None])
+        G0_left *= G0_right
+        return G0_left
 
     frac_vel = velocity_model.fracture_velocity
     bg_vel = velocity_model.background_velocity
@@ -105,9 +107,9 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
     scatterer_radii = np.full(len(velocity_model.scatterer_positions),
                               velocity_model.scatterer_radius)
     integration_scheme = Stroud("S3 3-1")
-    # sum over the result from all scatterer points
     res = integrate(integral, velocity_model.scatterer_positions,
-                    scatterer_radii, integration_scheme, dot=lambda x, y: np.einsum("ijkl, l-> ijk", x, y, optimize=True))
+                    scatterer_radii, integration_scheme, dot=lambda x, y: np.einsum("ijk, k-> ij", x, y, optimize=True))
+    # sum over the result from all scatterer points
     res = np.sum(res, axis=-1)
     res *= ricker_frequency_domain(omega, omega_central) * omega**2 * epsilon
     res *= 1 / (4. * np.pi * velocity_model.density * bg_vel**2)
@@ -117,8 +119,7 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
 def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
          velocity_model: AbstractVelocityModel,
          omega_central: RadiansPerSecond,
-         omega_samples: Sequence[RadiansPerSecond],
-         quiet: bool = False) -> np.ndarray:
+         omega_samples: Sequence[RadiansPerSecond]) -> np.ndarray:
     """
     Loop over frequency samples to create frequency spectrum of scattered P wave
     and backtransform into a time domain signal.
@@ -135,17 +136,10 @@ def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
     combinations
     """
     # TODO  add checking for correct dimensionality of source/receiver arrays with documentation and exceptions
-    p_wave_spectrum: List[complex] = []
-    omegas_iterator = tqdm(omega_samples, desc="Born modeling",
-                           unit="frequency samples",
-                           disable=quiet, leave=False)
-    for omega in omegas_iterator:
-        u_scattering = born_all_scatterers(source_pos, receiver_pos,
-                                           velocity_model, omega, omega_central)
-        p_wave_spectrum.append(u_scattering)
-    p_wave_spectrum: np.ndarray = np.array(p_wave_spectrum)
+    u_scattering = born_all_scatterers(source_pos, receiver_pos, velocity_model,
+                                       omega_samples, omega_central)
     # axis 0 contains the time samples
-    time_domain = np.real(np.fft.ifft(p_wave_spectrum, axis=0))
+    time_domain = np.real(np.fft.ifft(u_scattering, axis=-1))
     # shape is (N, A, B) where N is the number of time samples, A the number of
     # sources and B the number of receivers. Move N to the back to be able to
     # select seismograms for source/receiver combinations
@@ -178,7 +172,7 @@ def time_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.ndarr
     return np.linspace(0, timeseries_length, num_of_samples)
 
 
-def ricker_frequency_domain(omega: float, omega_central: float) -> float:
+def ricker_frequency_domain(omega: np.ndarray, omega_central: float) -> np.ndarray:
     """
     Taken from Frequencies of the Ricker wavelet by Yanghua Wang (eq. 7)
     :param omega: Frequency at which to evaluate the spectrum
@@ -186,7 +180,7 @@ def ricker_frequency_domain(omega: float, omega_central: float) -> float:
     :return: Value of frequency spectrum of a Ricker wavelet
     """
     return 2 * omega**2 / (math.sqrt(math.pi) * omega_central**3) \
-           * math.exp(- omega**2 / omega_central**2)
+        * np.exp(- omega**2 / omega_central**2)
 
 
 def scattering_potential(v: float, v0: float) -> float:

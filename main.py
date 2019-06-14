@@ -152,12 +152,13 @@ def oneshot(args) -> None:
     """
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
     # transpose positions from (N, 3) to (3, N) for broadcasting
-    seismogram = born(np.reshape(args.source_pos, (3, 1)), np.reshape(args.receiver_pos, (3, 1)), args.model, args.omega_central,
-                      omega_samples, args.quiet)
+    seismogram = born(args.source_pos, args.receiver_pos, args.model,
+                      args.omega_central,omega_samples)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
+    seismogram = np.squeeze(seismogram)
     if args.plot is True:
-        plot_time_series(np.squeeze(seismogram), t_samples)
+        plot_time_series(seismogram, t_samples)
     if args.filename is not None:
         save_seismogram(seismogram, t_samples, header, args.filename)
 
@@ -176,7 +177,7 @@ def fullmodel(args) -> None:
             pass
         for receiver_index, receiver_pos in enumerate(receivers):
             seismogram = born(source_pos, receiver_pos, args.model,
-                              args.omega_central, omega_samples, args.quiet)
+                              args.omega_central, omega_samples)
             header = create_header(source_pos, receiver_pos)
             seismopath = sourcepath / f"receiver_{receiver_index:03d}.txt"
             save_seismogram(seismogram, t_samples, header, seismopath)

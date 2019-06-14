@@ -16,6 +16,6 @@ class TestOneShotResult(unittest.TestCase):
         args = parser.parse_args(args_text.split())
         omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
         seismogram = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
-                          omega_samples, quiet=True)
+                          omega_samples)
         expected = load_seismogram(Path("test_inputs/output_oneshot.txt"))[1]
         np.testing.assert_allclose(seismogram, expected)
