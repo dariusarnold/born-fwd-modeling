@@ -107,7 +107,7 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
     integration_scheme = Stroud("S3 3-1")
     # sum over the result from all scatterer points
     res = integrate(integral, velocity_model.scatterer_positions,
-                    scatterer_radii, integration_scheme)
+                    scatterer_radii, integration_scheme, dot=lambda x, y: np.einsum("ijkl, l-> ijk", x, y, optimize=True))
     res = np.sum(res, axis=-1)
     res *= ricker_frequency_domain(omega, omega_central) * omega**2 * epsilon
     res *= 1 / (4. * np.pi * velocity_model.density * bg_vel**2)
