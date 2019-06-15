@@ -73,10 +73,10 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         """
         # Calculate magnitude of vectors
         subtraction = x - x_prime
-        lengths = np.sqrt(np.einsum("ijk, ijk -> jk", subtraction, subtraction, optimize=True))
+        lengths = np.sqrt(np.einsum("ijk, ijk -> jk", subtraction, subtraction))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        return 1./lengths * complex_exp(-omega[:, None, None] * (1. / bg_vel) * lengths[None, ...])
+        return complex_exp(-omega[:, None, None] * (1. / bg_vel) * lengths[None, ...]) * (1/lengths)
 
     def integral(x):
         """
