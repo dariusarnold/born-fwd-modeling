@@ -78,9 +78,10 @@ def read_sources(filepath: Path) -> np.ndarray:
 
 
 def save_seismogram(seismogram: np.ndarray, time_steps: np.ndarray, header: str,
-                    filename: str) -> None:
+                    filename: str, format_string: str = "%1.3f % e") -> None:
     # transpose stacked arrays to save them as columns instead of rows
-    np.savetxt(filename, np.vstack((time_steps, seismogram)).T, header=header)
+    np.savetxt(filename, np.vstack((time_steps, seismogram)).T, header=header,
+               fmt=format_string)
 
 
 def create_header(source_pos: np.ndarray, receiver_pos: np.ndarray) -> str:
