@@ -73,10 +73,10 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         """
         # Calculate magnitude of vectors
         subtraction = x - x_prime
-        lengths = np.sqrt(np.einsum("ijk, ijk -> jk", subtraction, subtraction))
+        lengths = np.sqrt(np.einsum("ijkl, ijkl -> jkl", subtraction, subtraction, optimize=True))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        return complex_exp(-omega[:, None, None] * (1. / bg_vel) * lengths[None, ...]) * (1/lengths)
+        return complex_exp(-omega[None, :, None, None] * (1. / bg_vel) * lengths[:, None, ...]) / lengths[:, None, ...]
 
     def integral(x):
         """
@@ -88,13 +88,11 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         chosen by quadpy. The first axis is fixed (3). It represents the x, y, z
         values, eg. x[0] contains all x values of all points.
         """
-        # xs, xr need to be extended to a shape of (3, 1, 1) from (3,) for numpy
+        # xs, xr need to be extended  from (N, 3) to (N, 3, 1, 1) for numpy
         # broadcasting to work.
-        G0_left = greens_function_vectorized(xs[:, None, None], x)
-        G0_right = greens_function_vectorized(x, xr[:, None, None])
-        # multiply without temporary array
-        G0_left *= G0_right
-        return G0_left
+        G0_left = greens_function_vectorized(xs[..., None, None], x[:, None, ...])
+        G0_right = greens_function_vectorized(x[:, None, ...], xr[..., None, None])
+        return G0_left * G0_right
 
     frac_vel = velocity_model.fracture_velocity
     bg_vel = velocity_model.background_velocity
@@ -103,8 +101,8 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
                               velocity_model.scatterer_radius)
     integration_scheme = Stroud("S3 3-1")
     res = integrate(integral, velocity_model.scatterer_positions,
-                    scatterer_radii, integration_scheme,
-                    dot=lambda x, y: np.einsum("ijk, k-> ij", x, y, optimize=True))
+                    scatterer_radii, integration_scheme)
+                    dot=lambda x, y: np.einsum("ijkl, l", x, y, optimize=True))
     # sum over the result from all scatterer points
     res = np.sum(res, axis=-1)
     res *= ricker_frequency_domain(omega, omega_central) * omega**2 * epsilon
@@ -131,12 +129,15 @@ def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
     if source_pos.shape != (3,):
         raise ValueError("Shape mismatch for source position: Got "
                          f"{source_pos.shape}, expected (3,).")
-    if receiver_pos.shape != (3,):
+    # assert that receiver positions have shape (N, 3)
+    if len(receiver_pos.shape) > 2 and receiver_pos.shape[1] != 3:
         raise ValueError("Shape mismatch for receiver position: Got"
-                         f"{receiver_pos.shape}, expected (3,).")
+                         f"{receiver_pos.shape}, expected (N, 3).")
+    source_pos = source_pos.reshape((3, 1))
+    receiver_pos = receiver_pos.T
     u_scattering = born_all_scatterers(source_pos, receiver_pos, velocity_model,
                                        omega_samples, omega_central)
-    time_domain = np.real(np.fft.ifft(u_scattering))
+    time_domain = np.real(np.fft.ifft(u_scattering, axis=-1))
     return time_domain
 
 

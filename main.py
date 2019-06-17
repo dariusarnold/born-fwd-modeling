@@ -3,6 +3,7 @@ import importlib
 import itertools
 import os
 import time
+from math import ceil
 from pathlib import Path
 
 import numpy as np
@@ -183,16 +184,21 @@ def fullmodel(args) -> None:
     for i in range(1, len(sources)+1):
         path = Path(output_folder.format(id=i))
         path.mkdir(parents=True, exist_ok=True)
-    indices_progressbar = tqdm(itertools.product(range(len(sources)), range(len(receivers))),
-                               desc="Calculating seismograms", total=len(sources)*len(receivers),
-                               unit="seismogram")
-    for index_source, index_receiver in indices_progressbar:
-        seismogram = born(sources[index_source], receivers[index_receiver],
-                          args.model, args.omega_central, omega_samples)
-        header = create_header(sources[index_source], receivers[index_receiver])
-        fpath = Path(output_folder.format(id=index_source+1))
-        fname = Path(output_filename.format(id=index_receiver+1))
-        save_seismogram(seismogram, t_samples, header, fpath/fname)
+    # split receivers into groups of 10
+    groupsize = 4
+    receiver_chunks = np.array_split(receivers, ceil(len(receivers)/groupsize))
+    for index_source in range(len(sources)):
+        for index_chunk, receiver_chunk in enumerate(receiver_chunks):
+            a = time.time()
+            seismograms = born(sources[index_source], receiver_chunk,
+                               args.model, args.omega_central, omega_samples)
+            b = time.time()
+            print("Runtime: ", b-a)
+            for seismogram, index_receiver in zip(seismograms, range(len(receiver_chunk))):
+                header = create_header(sources[index_source], receivers[index_chunk*groupsize+index_receiver])
+                fpath = Path(output_folder.format(id=index_source+1))
+                fname = Path(output_filename.format(id=index_chunk*groupsize+index_receiver+1))
+                save_seismogram(seismogram, t_samples, header, fpath/fname)
 
 
 if __name__ == '__main__':
