@@ -115,10 +115,11 @@ def _setup_parser() -> argparse.ArgumentParser:
     # coordinates
     # see https://bugs.python.org/issue14074
     # TODO rewrite to required named arguments group
-    oneshot_p.add_argument("-s", "--source_pos", nargs=3, type=float, required=True,
+    required_named = oneshot_p.add_argument_group("Required named arguments")
+    required_named.add_argument("-s", "--source_pos", nargs=3, type=float, required=True,
                    action=ConvertToNumpyArray, metavar=("XS", "YS", "ZS"),
                    help="coordinates of source (shot position) in m")
-    oneshot_p.add_argument("-r", "--receiver_pos", nargs=3, type=float, required=True,
+    required_named.add_argument("-r", "--receiver_pos", nargs=3, type=float, required=True,
                    action=ConvertToNumpyArray, metavar=("XR", "YR", "ZR"),
                    help="coordinates of receiver (geophone position) in m")
     oneshot_p.add_argument("filename", type=str, metavar="output_filename", nargs="?",
