@@ -125,9 +125,8 @@ def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
     and other data
     :param omega_central: Central frequency for Ricker source wavelet
     :param omega_samples: Sequence of angular frequencies
-    :param quiet: If True, progress bar output is disabled
-    :return: Time domain signal (seismograms) for all source/receiver
-    combinations
+    :return: Time domain signal (seismogram) for the given source/receiver
+    combination
     """
     if source_pos.shape != (3,):
         raise ValueError("Shape mismatch for source position: Got "

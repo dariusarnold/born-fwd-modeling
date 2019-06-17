@@ -1,5 +1,6 @@
 import argparse
 import importlib
+import itertools
 import os
 import time
 from pathlib import Path
@@ -172,37 +173,19 @@ def fullmodel(args) -> None:
     """
     Create seismograms for multiple sources and receivers and save them to files.
     """
-    # use symmetry of equation: a seismogram calculated from source to
-    # receiver is the same as the one calculated from receiver to source
-    # this can save almost 50% of calculations if an equal number of
-    # sources and receivers is used.
-    # lines are receivers, columns are sources.
-    # only numbered entries of the matrix need to be calculated. Entries
-    # marked with x are the same as the ones on the other side of the
-    # diagonal.
-    # -> s
-    # |     0   1   2   3
-    # v 0   00  01  02  03
-    # r 1    x  11  12  13
-    #   2    x   x  22  23
     omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
     t_samples = time_samples(args.timeseries_length, args.sample_period)
     receivers = read_stations(Path(args.receiverfile))
-    sources = read_sources(Path(args.sourcefile))[0].reshape(1, 3)
+    sources = read_sources(Path(args.sourcefile))
     output_folder = os.path.join("output", "source_{id:03d}")
     output_filename = "receiver_{id:03d}.txt"
     # create all source directories. Counting starts at 1
     for i in range(1, len(sources)+1):
         path = Path(output_folder.format(id=i))
         path.mkdir(parents=True, exist_ok=True)
-    if len(sources) >= len(receivers):
-        # receivers on rows, sources on columns
-        receiver_indices, source_indices = np.triu_indices(len(receivers), m=len(sources))
-    else:
-        # sources on rows, receivers on columns
-        source_indices, receiver_indices = np.triu_indices(len(sources), m=len(receivers))
-    indices_progressbar = tqdm(zip(source_indices, receiver_indices),
-                               desc="Calculating seismograms", total=len(source_indices))
+    indices_progressbar = tqdm(itertools.product(range(len(sources)), range(len(receivers))),
+                               desc="Calculating seismograms", total=len(sources)*len(receivers),
+                               unit="seismogram")
     for index_source, index_receiver in indices_progressbar:
         seismogram = born(sources[index_source], receivers[index_receiver],
                           args.model, args.omega_central, omega_samples)
@@ -210,15 +193,6 @@ def fullmodel(args) -> None:
         fpath = Path(output_folder.format(id=index_source+1))
         fname = Path(output_filename.format(id=index_receiver+1))
         save_seismogram(seismogram, t_samples, header, fpath/fname)
-        if (index_source != index_receiver  # diagonal doesn't have "mirrored" seismogram
-                # for non square matrix, check if you are beyond the shorter axis
-                and index_source < len(receivers) #
-                and index_receiver < len(sources)):
-            # save secondary/symmetric seismogram
-            header = create_header(receivers[index_receiver], sources[index_source])
-            fpath = Path(output_folder.format(id=index_receiver+1))
-            fname = Path(output_filename.format(id=index_source+1))
-            save_seismogram(seismogram, t_samples, header, fpath/fname)
 
 
 if __name__ == '__main__':
