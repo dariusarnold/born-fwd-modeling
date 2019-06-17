@@ -81,6 +81,12 @@ def _setup_parser() -> argparse.ArgumentParser:
     p.add_argument("-c", "--cores", type=int, help=("Number of cores for "
                    "parallelization. If not specified, numpys default value "
                    "will be kept."))
+    p.add_argument("-s", "--chunksize", type=int, default=4, help="Chunk "
+                    "size for vectorization of calculation over receivers. "
+                    "The seismograms for the specified number of receivers will"
+                    " be calculated simultaneously. Increasing this parameter "
+                    "will rise modeling speed at the cost of larger memory "
+                    "requirements.")
     p.add_argument("-m", "--model", type=velocity_model, default="marcellus.py",
                    help=("Specify file from which the velocity model is created."
                          "The file should contain a create_velocity_model "
@@ -186,8 +192,7 @@ def fullmodel(args) -> None:
         path = Path(output_folder.format(id=i))
         path.mkdir(parents=True, exist_ok=True)
     # split receivers into groups of 10
-    groupsize = 8
-    receiver_chunks = np.array_split(receivers, ceil(len(receivers)/groupsize))
+    receiver_chunks = np.array_split(receivers, ceil(len(receivers)/args.chunksize))
     for index_source in range(len(sources)):
         for index_chunk, receiver_chunk in enumerate(receiver_chunks):
             a = time.time()
@@ -196,9 +201,9 @@ def fullmodel(args) -> None:
             b = time.time()
             print("Runtime: ", b-a)
             for seismogram, index_receiver in zip(seismograms, range(len(receiver_chunk))):
-                header = create_header(sources[index_source], receivers[index_chunk*groupsize+index_receiver])
+                header = create_header(sources[index_source], receivers[index_chunk*args.chunksize+index_receiver])
                 fpath = Path(output_folder.format(id=index_source+1))
-                fname = Path(output_filename.format(id=index_chunk*groupsize+index_receiver+1))
+                fname = Path(output_filename.format(id=index_chunk*args.chunksize+index_receiver+1))
                 save_seismogram(seismogram, t_samples, header, fpath/fname)
 
 
