@@ -185,7 +185,7 @@ def fullmodel(args) -> None:
         path = Path(output_folder.format(id=i))
         path.mkdir(parents=True, exist_ok=True)
     # split receivers into groups of 10
-    groupsize = 4
+    groupsize = 8
     receiver_chunks = np.array_split(receivers, ceil(len(receivers)/groupsize))
     for index_source in range(len(sources)):
         for index_chunk, receiver_chunk in enumerate(receiver_chunks):

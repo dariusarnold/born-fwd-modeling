@@ -98,10 +98,13 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
     bg_vel = velocity_model.background_velocity
     epsilon = scattering_potential(frac_vel, bg_vel)
     scatterer_radii = np.full(len(velocity_model.scatterer_positions),
-                              velocity_model.scatterer_radius)
+                              velocity_model.scatterer_radius, dtype=np.float32)
     integration_scheme = Stroud("S3 3-1")
+    # hack to compute everything with 32 bit floats
+    integration_scheme.points = integration_scheme.points.astype(np.float32)
+    integration_scheme.weights = integration_scheme.weights.astype(np.float32)
     res = integrate(integral, velocity_model.scatterer_positions,
-                    scatterer_radii, integration_scheme)
+                    scatterer_radii, integration_scheme,
                     dot=lambda x, y: np.einsum("ijkl, l", x, y, optimize=True))
     # sum over the result from all scatterer points
     res = np.sum(res, axis=-1)
@@ -153,7 +156,7 @@ def frequency_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.
     num_of_samples = int(timeseries_length / sample_period)
     delta_omega = 2*math.pi / timeseries_length
     omega_max = num_of_samples * delta_omega
-    f_samples = np.linspace(0, omega_max, num_of_samples)
+    f_samples = np.linspace(0, omega_max, num_of_samples, dtype=np.float32)
     return f_samples
 
 

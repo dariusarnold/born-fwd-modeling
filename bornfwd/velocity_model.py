@@ -64,5 +64,5 @@ class VelocityModel(AbstractVelocityModel):
         self.background_velocity: MetersPerSecond = background_velocity
         self.fracture_velocity: MetersPerSecond = fracture_velocity
         self.density = density
-        self.scatterer_positions = scatterer_positions
+        self.scatterer_positions = scatterer_positions.astype(np.float32)
         self.scatterer_radius = scatterer_radius

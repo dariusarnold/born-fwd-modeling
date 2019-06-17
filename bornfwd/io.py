@@ -14,7 +14,8 @@ def read_stations(filepath: Path) -> np.ndarray:
     N is the number of receivers defined in the file (first line), 3 are the
     x, y, z coordinates of the individual receivers.
     """
-    stations = np.genfromtxt(filepath, skip_header=1, usecols=(1, 2, 3))
+    stations = np.genfromtxt(filepath, skip_header=1, usecols=(1, 2, 3),
+                             dtype=np.float32)
     return stations
 
 
@@ -67,7 +68,7 @@ def read_sources(filepath: Path) -> np.ndarray:
                 z_values.append(value)
 
         sources = np.array([(x, y, z) for x, y, z in
-                            zip(x_values, y_values, z_values)])
+                            zip(x_values, y_values, z_values)], dtype=np.float32)
         if nsrc is None:
             raise ValueError(f"Number of sources (nsrc) not specified in file"
                              f"{filepath}")
