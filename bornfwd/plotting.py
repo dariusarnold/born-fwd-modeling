@@ -19,6 +19,33 @@ def plot_fractures(velocity_model: VelocityModel) -> None:
     plt.show()
 
 
+def plot_recording_geometry(sources: np.ndarray, receivers: np.ndarray) -> None:
+    """
+    Plot recording geometry (positions of sources and receivers)
+    :param sources: array of shape (N, 3)
+    :param receivers: array of shape (M, 3)
+    """
+    sources_x = sources.T[0]
+    sources_y = sources.T[1]
+    receivers_x = receivers.T[0]
+    receivers_y = receivers.T[1]
+    plt.scatter(sources_x, sources_y, marker="*", color="orange", s=1,
+                label="Sources")
+    plt.scatter(receivers_x, receivers_y, marker="v", color="dodgerblue", s=1,
+                label="Receivers")
+    plt.title("Source/Receiver geometry")
+    plt.legend()
+    plt.xlabel("x axis (West-East, m)")
+    plt.ylabel("y axis (South-North, m)")
+    plt.axis("equal")
+    plt.xlim((0, 11200))
+    plt.ylim((0, 11200))
+    plt.tight_layout()
+    plt.show()
+
+
+
+
 def plot_time_series(data: np.ndarray, timesteps: np.ndarray,
                      time_unit: str = "s") -> None:
     """Plot the seismogram generated from Born modeling as a time series"""

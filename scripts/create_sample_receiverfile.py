@@ -1,6 +1,6 @@
-from pathlib import Path
-
 import numpy as np
+
+from bornfwd.io import save_receiver_file
 
 
 def create_receivers() -> np.ndarray:
@@ -16,21 +16,6 @@ def create_receivers() -> np.ndarray:
     return receivers
 
 
-def save_receiver_file(filepath: Path, receivers: np.ndarray) -> None:
-    """
-    Save receivers to file with correct formatting so the file can be read
-    :param filepath: Where file will be saved
-    :param receivers: (N, 3) array of N receiver coordinates
-    """
-    # header contains number of receiver positions
-    header = str(len(receivers))
-    # indices start at 1
-    indices = np.array(range(1, len(receivers)+1))
-    # reshape to the same dimension as receivers so hstack works
-    indices = indices.reshape(len(receivers), 1)
-    # append indices to the left
-    data = np.hstack((indices, receivers))
-    # save index as int while coordinates are formatted as float
-    format_str = "%d %f %f %f"
-    # make comments empty string so header isn't prepended with default #
-    np.savetxt(str(filepath), data, fmt=format_str, header=header, comments=" ")
+if __name__ == '__main__':
+    receivers = create_receivers()
+    save_receiver_file("receivers_fig5.txt", receivers)

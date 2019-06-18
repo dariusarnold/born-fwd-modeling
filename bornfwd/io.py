@@ -147,3 +147,38 @@ def load_seismograms(seismograms_path: Path, seismogram_filename_template: str)\
         times, seismic_data = load_seismogram(fname)
         seismograms.append(seismic_data)
     return np.array(seismograms), times, receiver_positions, source_pos
+
+
+def save_receiver_file(filepath: Path, receivers: np.ndarray) -> None:
+    """
+    Save receivers to file with correct formatting so the file can be read
+    :param filepath: Where file will be saved
+    :param receivers: (N, 3) array of N receiver coordinates
+    """
+    # header contains number of receiver positions
+    header = str(len(receivers))
+    # indices start at 1
+    indices = np.array(range(1, len(receivers)+1))
+    # reshape to the same dimension as receivers so hstack works
+    indices = indices.reshape(len(receivers), 1)
+    # append indices to the left
+    data = np.hstack((indices, receivers))
+    # save index as int while coordinates are formatted as float
+    format_str = "%d %f %f %f"
+    # make comments empty string so header isn't prepended with default #
+    np.savetxt(str(filepath), data, fmt=format_str, header=header, comments=" ")
+
+
+def save_source_file(filepath: Path, sources: np.ndarray) -> None:
+    """
+    Save source locations to file with correct formatting.
+    :param filepath: Where file will be saved
+    :param sources: (N, 3) array of N source coordinates
+    :return:
+    """
+    with filepath.open("w") as f:
+        f.write(f"nsrc = {len(sources)}\n")
+        for source_position in sources:
+            f.write(f"xsource = {source_position[0]}\n"
+                    f"ysource = {source_position[1]}\n"
+                    f"zsource = {source_position[2]}\n\n")
