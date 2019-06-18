@@ -26,7 +26,8 @@ def generate_seismograms():
         "receiverfile": "sample_receiverfile",
         "sourcefile": "reproduce_fig_sourcefile",
         "model": create_velocity_model(),
-        "omega_central": angular(Hertz(30))
+        "omega_central": angular(Hertz(30)),
+        "chunksize": 12
     }
 
     args = Namespace(**parameters)
@@ -35,5 +36,5 @@ def generate_seismograms():
 
 if __name__ == '__main__':
     generate_seismograms()
-    seismos, *_ = load_seismograms(Path("output/source_001"), "receiver_*.txt")
+    seismos, *_ = load_seismograms(Path("output_fig5b/source_001"), "receiver_*.txt")
     plot_seismogram_gather(seismos)

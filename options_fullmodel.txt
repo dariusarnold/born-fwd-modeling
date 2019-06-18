@@ -6,3 +6,5 @@ fullmodel
 sample_sourcefile
 -r
 sample_receiverfile
+-k
+12

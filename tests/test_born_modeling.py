@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from bornfwd.functions import born, frequency_samples
+from bornfwd.functions import born_multi, frequency_samples
 from bornfwd.io import load_seismogram
 from main import _setup_parser
 import numpy as np
@@ -15,8 +15,8 @@ class TestOneShotResult(unittest.TestCase):
             args_text = f.read().replace("\n", " ")
         args = parser.parse_args(args_text.split())
         omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
-        seismogram = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
-                          omega_samples)
+        seismogram = born_multi(args.source_pos, args.receiver_pos, args.model, args.omega_central,
+                                omega_samples)
         expected = load_seismogram(Path("test_inputs/output_oneshot.txt"))[1]
         np.testing.assert_allclose(seismogram, expected)
 
@@ -26,10 +26,10 @@ class TestOneShotResult(unittest.TestCase):
             args_text = f.read().replace("\n", " ")
         args = parser.parse_args(args_text.split())
         omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
-        s1 = born(args.source_pos, args.receiver_pos, args.model, args.omega_central,
-                  omega_samples)
-        s2 = born(args.receiver_pos, args.source_pos, args.model, args.omega_central,
-                  omega_samples)
+        s1 = born_multi(args.source_pos, args.receiver_pos, args.model, args.omega_central,
+                        omega_samples)
+        s2 = born_multi(args.receiver_pos, args.source_pos, args.model, args.omega_central,
+                        omega_samples)
         msg = ("Receiver to source seismogram not matching source to receiver"
                "seismogram.")
         np.testing.assert_allclose(s1, s2, err_msg=msg)

@@ -1,15 +1,10 @@
 import argparse
 import importlib
-import itertools
-import os
-import time
-from math import ceil
 from pathlib import Path
 
 import numpy as np
-from tqdm import tqdm
 
-from bornfwd.functions import angular, born, time_samples, frequency_samples
+from bornfwd.functions import angular, born_multi, born_single
 from bornfwd.io import save_seismogram, create_header, read_stations, read_sources
 from bornfwd.plotting import plot_time_series
 from bornfwd.units import Hertz
@@ -51,7 +46,7 @@ def _setup_parser() -> argparse.ArgumentParser:
         """Convert tuple of 3 values to a numpy array during argument parsing"""
 
         def __call__(self, parser, namespace, values, option_string=None):
-            vector = np.array(values)
+            vector = np.array(values).reshape((1, 3))
             setattr(namespace, self.dest, vector)
 
     class AddNargsAsAttributesAction(argparse.Action):
@@ -78,15 +73,10 @@ def _setup_parser() -> argparse.ArgumentParser:
                    help="Length of output time series (s) and sample rate (s).",
                    action=AddNargsAsAttributesAction,
                    dest="timeseries_length sample_period")
+    # TODO implement handling this
     p.add_argument("-c", "--cores", type=int, help=("Number of cores for "
                    "parallelization. If not specified, numpys default value "
                    "will be kept."))
-    p.add_argument("-s", "--chunksize", type=int, default=4, help="Chunk "
-                    "size for vectorization of calculation over receivers. "
-                    "The seismograms for the specified number of receivers will"
-                    " be calculated simultaneously. Increasing this parameter "
-                    "will rise modeling speed at the cost of larger memory "
-                    "requirements.")
     p.add_argument("-m", "--model", type=velocity_model, default="marcellus.py",
                    help=("Specify file from which the velocity model is created."
                          "The file should contain a create_velocity_model "
@@ -119,8 +109,7 @@ def _setup_parser() -> argparse.ArgumentParser:
     # Even though making optional arguments required is against command line
     # conventions, this is the only way to use metavars to specify order of
     # coordinates
-    # see https://bugs.python.org/issue14074
-    # TODO rewrite to required named arguments group
+    # see https://bugs.python.org/issue14074#T
     required_named = oneshot_p.add_argument_group("Required named arguments")
     required_named.add_argument("-s", "--source_pos", nargs=3, type=float, required=True,
                    action=ConvertToNumpyArray, metavar=("XS", "YS", "ZS"),
@@ -143,6 +132,13 @@ def _setup_parser() -> argparse.ArgumentParser:
     fullmodel_p.add_argument("-r", "--receiverfile", required=True,
                              help="Specify file from which receiver coordinates"
                                   "are read.")
+    chunksize_help = ("Chunk size for vectorization of calculation over "
+                      "receivers. The seismograms for the specified number of "
+                      "receivers will be calculated simultaneously. "
+                      "Increasing this parameter will rise modeling speed at "
+                      "the cost of larger memory requirements.")
+    fullmodel_p.add_argument("-k", "--chunksize", type=int, default=4,
+                             help=chunksize_help)
     fullmodel_p.set_defaults(func=fullmodel)
     return p
 
@@ -161,16 +157,12 @@ def oneshot(args) -> None:
     """
     Create a seismogram by born modeling and save it to a file or plot it.
     """
-    omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
-    # transpose positions from (N, 3) to (3, N) for broadcasting
-    a = time.time()
-    seismogram = born(args.source_pos, args.receiver_pos, args.model,
-                      args.omega_central,omega_samples)
-    b = time.time()
-    print(b-a)
-    t_samples = time_samples(args.timeseries_length, args.sample_period)
+
+    seismogram = born_single(args.source_pos, args.receiver_pos, args.model,
+                             args.omega_central, args.timeseries_length,
+                             args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
-    seismogram = np.squeeze(seismogram)
+    t_samples, seismogram = seismogram
     if args.plot is True:
         plot_time_series(seismogram, t_samples)
     if args.filename is not None:
@@ -181,30 +173,10 @@ def fullmodel(args) -> None:
     """
     Create seismograms for multiple sources and receivers and save them to files.
     """
-    omega_samples = frequency_samples(args.timeseries_length, args.sample_period)
-    t_samples = time_samples(args.timeseries_length, args.sample_period)
     receivers = read_stations(Path(args.receiverfile))
     sources = read_sources(Path(args.sourcefile))
-    output_folder = os.path.join("output", "source_{id:03d}")
-    output_filename = "receiver_{id:03d}.txt"
-    # create all source directories. Counting starts at 1
-    for i in range(1, len(sources)+1):
-        path = Path(output_folder.format(id=i))
-        path.mkdir(parents=True, exist_ok=True)
-    # split receivers into groups of 10
-    receiver_chunks = np.array_split(receivers, ceil(len(receivers)/args.chunksize))
-    for index_source in range(len(sources)):
-        for index_chunk, receiver_chunk in enumerate(receiver_chunks):
-            a = time.time()
-            seismograms = born(sources[index_source], receiver_chunk,
-                               args.model, args.omega_central, omega_samples)
-            b = time.time()
-            print("Runtime: ", b-a)
-            for seismogram, index_receiver in zip(seismograms, range(len(receiver_chunk))):
-                header = create_header(sources[index_source], receivers[index_chunk*args.chunksize+index_receiver])
-                fpath = Path(output_folder.format(id=index_source+1))
-                fname = Path(output_filename.format(id=index_chunk*args.chunksize+index_receiver+1))
-                save_seismogram(seismogram, t_samples, header, fpath/fname)
+    born_multi(sources, receivers, args.model, args.omega_central,
+               args.timeseries_length, args.sample_period, args.chunksize)
 
 
 if __name__ == '__main__':

@@ -1,11 +1,14 @@
 import math
 import os
-from typing import List, Sequence
+import time
+from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 from quadpy.ball import integrate, Stroud
 from tqdm import tqdm
 
+from bornfwd.io import save_seismogram, create_header
 from bornfwd.units import Hertz, RadiansPerSecond, Seconds
 from bornfwd.velocity_model import AbstractVelocityModel
 
@@ -26,25 +29,26 @@ def set_number_numpy_threads(threads: int):
 #set_number_numpy_threads(1)
 
 
-def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
-                        velocity_model: AbstractVelocityModel,
-                        omega: np.ndarray,
-                        omega_central: RadiansPerSecond) -> np.ndarray:
+def _born(xs: np.ndarray, xr: np.ndarray,
+          velocity_model: AbstractVelocityModel,
+          omega: np.ndarray,
+          omega_central: RadiansPerSecond) -> np.ndarray:
     """
     Calculate born scattering for all scatterers over a range of frequencies.
     This implements eq. (1) from
     3D seismic characterization of fractures in a dipping layer using the
     double-beam method
     Hao Hu and Yingcai Zheng
-    :param xs: Source position array, shape (3,).
-    :param xr: Receiver position array, shape (3,).
+    :param xs: Source position array, shape (3, 1).
+    :param xr: Receiver position array, shape (M, 3).
     :param velocity_model: Model containing geometry of scatterers, velocities
     and density.
-    :param omega: Angular frequencies in (N,) array where N is the number of
+    :param omega: Angular frequencies in (K,) array where K is the number of
     samples.
     :param omega_central: Central frequency of ricker source wavelet.
     :return: Frequency spectrum of the scattered P wave for all omega sample
-    points.
+    points. If M receiver positions were specified, the returned array will be
+    of shape (M, K).
     """
 
     def complex_exp(exp_term: np.array) -> np.array:
@@ -73,10 +77,12 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
         """
         # Calculate magnitude of vectors
         subtraction = x - x_prime
-        lengths = np.sqrt(np.einsum("ijkl, ijkl -> jkl", subtraction, subtraction, optimize=True))
+        lengths = np.sqrt(np.einsum("ijkl, ijkl -> jkl", subtraction, subtraction,
+                                    optimize=True))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        return complex_exp(-omega[None, :, None, None] * (1. / bg_vel) * lengths[:, None, ...]) / lengths[:, None, ...]
+        return complex_exp(-omega[None, :, None, None] * (1. / bg_vel)
+                           * lengths[:, None, ...]) / lengths[:, None, ...]
 
     def integral(x):
         """
@@ -113,35 +119,85 @@ def born_all_scatterers(xs: np.ndarray, xr: np.ndarray,
     return res
 
 
-def born(source_pos: np.ndarray, receiver_pos: np.ndarray,
-         velocity_model: AbstractVelocityModel,
-         omega_central: RadiansPerSecond,
-         omega_samples: Sequence[RadiansPerSecond]) -> np.ndarray:
+def born_single(source_position: np.ndarray, receiver_position: np.ndarray,
+                velocity_model: AbstractVelocityModel,
+                omega_central: RadiansPerSecond, timeseries_length: Seconds,
+                sample_period: Seconds) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Create frequency spectrum of scattered P wave and backtransform into a time
-    domain signal.
-    :param source_pos: (3,) array of (x y z) coordinates of source position
-    :param receiver_pos: (3,) array of (x y z) coordinates of receiver position
-    :param velocity_model: Velocity model instance containg scatterer positions
-    and other data
+    Generate seismogram for shot and receiver position.
+    :param source_position: (x y z) coordinates of source
+    :param receiver_position: (x y z) coordinates of receivers
+    :param velocity_model: VelocityModel instance
+    :param omega_central: Central frequency of Ricker source wavelet
+    :param timeseries_length: Desired length of seismograms in seconds
+    :param sample_period: Desired samplerate of seismograms in seconds
+    :return: Tuple of two arrays: First array is timesteps where the seismogram
+    was calculated, second array is the seismogram
+    """
+    omega_samples = frequency_samples(timeseries_length, sample_period)
+    t_samples = time_samples(timeseries_length, sample_period)
+    u_scattering = _born(source_position.reshape(3, 1),
+                         receiver_position.reshape(3, 1), velocity_model,
+                         omega_samples, omega_central)
+    time_domain = np.real(np.fft.ifft(np.squeeze(u_scattering)))
+    return t_samples, time_domain
+
+
+def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
+               velocity_model: AbstractVelocityModel, omega_central: RadiansPerSecond,
+               timeseries_length: Seconds, sample_period: Seconds, chunksize: int) -> None:
+    """
+    Generate scattered P wave for multiple source/receiver locations and save
+    them as files.
+    :param source_positions: (N, 3) array of coordinates of N source positions.
+    Second axis with length 3 contains (x y z) points.
+    :param receiver_positions: (M, 3) array of coordinates of M receiver positions.
+    :param velocity_model: Velocity model instance containing scatterer positions
+    and other data.
     :param omega_central: Central frequency for Ricker source wavelet
-    :param omega_samples: Sequence of angular frequencies
-    :return: Time domain signal (seismogram) for the given source/receiver
-    combination
+    :param timeseries_length: Desired length of seismograms in seconds
+    :param sample_period: Desired samplerate of seismograms in seconds
+    :param chunksize: Number of receivers for which seismograms are calculated
+    in parallel
     """
-    if source_pos.shape != (3,):
+    if len(source_positions.shape) != 2 or source_positions.shape[1] != 3:
         raise ValueError("Shape mismatch for source position: Got "
-                         f"{source_pos.shape}, expected (3,).")
-    # assert that receiver positions have shape (N, 3)
-    if len(receiver_pos.shape) > 2 and receiver_pos.shape[1] != 3:
+                         f"{source_positions.shape}, expected (N, 3).")
+    # add axes so that indexing or iterating an array of shape (N, 3, 1)
+    # gives (3, 1) array instead of (3,), as expected by _born function
+    source_positions = source_positions[..., None]
+    # assert that receiver positions have shape (M, 3)
+    if len(receiver_positions.shape) > 2 or receiver_positions.shape[1] != 3:
         raise ValueError("Shape mismatch for receiver position: Got"
-                         f"{receiver_pos.shape}, expected (N, 3).")
-    source_pos = source_pos.reshape((3, 1))
-    receiver_pos = receiver_pos.T
-    u_scattering = born_all_scatterers(source_pos, receiver_pos, velocity_model,
-                                       omega_samples, omega_central)
-    time_domain = np.real(np.fft.ifft(u_scattering, axis=-1))
-    return time_domain
+                         f"{receiver_positions.shape}, expected (M, 3).")
+
+    output_folder = os.path.join("output", "source_{id:03d}")
+    output_filename = "receiver_{id:03d}.txt"
+
+    omega_samples = frequency_samples(timeseries_length, sample_period)
+    t_samples = time_samples(timeseries_length, sample_period)
+
+    split_positions = range(chunksize, len(receiver_positions), chunksize)
+    receiver_chunks = np.array_split(receiver_positions, split_positions)
+    for index_source, source_position in enumerate(source_positions):
+        # generate source folder
+        fpath = Path(output_folder.format(id=index_source+1))
+        fpath.mkdir(parents=True, exist_ok=True)
+        for index_chunk, receiver_chunk in enumerate(receiver_chunks):
+            # calculate seismograms
+            a = time.time()
+            u_scattering = _born(source_position, receiver_chunk.T,
+                                 velocity_model, omega_samples,
+                                 omega_central)
+            u_scattering = np.real(np.fft.ifft(u_scattering, axis=-1))
+            b = time.time()
+            print(b - a)
+            # save seismograms
+            for seismogram_index, seismogram in enumerate(u_scattering):
+                header = create_header(source_position, receiver_chunk[seismogram_index])
+                receiver_id = index_chunk * chunksize + seismogram_index + 1
+                fname = Path(output_filename.format(id=receiver_id))
+                save_seismogram(seismogram, t_samples, header, fpath/fname)
 
 
 def angular(f: Hertz) -> RadiansPerSecond:
