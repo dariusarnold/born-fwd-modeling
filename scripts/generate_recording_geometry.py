@@ -4,6 +4,7 @@ import numpy as np
 
 from bornfwd.plotting import plot_recording_geometry
 from bornfwd.io import save_receiver_file, save_source_file
+from marcellus import create_velocity_model
 
 """
 Generate source- and receiverfile for marcellus shale recording geometry
@@ -58,6 +59,7 @@ def generate_source_positions():
 if __name__ == '__main__':
     receivers = generate_receiver_positions()
     sources = generate_source_positions()
-    plot_recording_geometry(sources, receivers)
+    vm = create_velocity_model()
+    plot_recording_geometry(sources, receivers, vm)
     save_receiver_file(Path("receivers.txt"), receivers)
     save_source_file(Path("sources.txt"), sources)
