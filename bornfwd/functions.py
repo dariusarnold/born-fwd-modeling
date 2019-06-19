@@ -170,6 +170,7 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
         raise ValueError("Shape mismatch for receiver position: Got"
                          f"{receiver_positions.shape}, expected (M, 3).")
 
+    #TODO replace hardcoded paths with command line options
     output_folder = os.path.join("output", "source_{id:03d}")
     output_filename = "receiver_{id:03d}.txt"
 
