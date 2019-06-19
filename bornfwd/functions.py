@@ -1,6 +1,5 @@
 import math
 import os
-import time
 from pathlib import Path
 from typing import Tuple
 
@@ -183,15 +182,14 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
         # generate source folder
         fpath = Path(output_folder.format(id=index_source+1))
         fpath.mkdir(parents=True, exist_ok=True)
-        for index_chunk, receiver_chunk in enumerate(receiver_chunks):
+        progress_bar = tqdm(receiver_chunks, desc=f"Source {index_source:03d}/{len(source_positions):03d}",
+                            unit="chunk", leave=True)
+        for index_chunk, receiver_chunk in enumerate(progress_bar):
             # calculate seismograms
-            a = time.time()
             u_scattering = _born(source_position, receiver_chunk.T,
                                  velocity_model, omega_samples,
                                  omega_central)
             u_scattering = np.real(np.fft.ifft(u_scattering, axis=-1))
-            b = time.time()
-            print(b - a)
             # save seismograms
             for seismogram_index, seismogram in enumerate(u_scattering):
                 header = create_header(source_position, receiver_chunk[seismogram_index])
