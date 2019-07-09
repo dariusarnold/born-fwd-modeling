@@ -98,26 +98,25 @@ def create_header(source_pos: np.ndarray, receiver_pos: np.ndarray) -> str:
     return h
 
 
-def read_header_from_file(filepath: Path) -> List[str]:
-    """Read first two lines from a file saved by save_seismogram function and
-    return them as a list of strings, stripped from newline characters."""
+
+def read_header_from_file(filepath: Path) -> List[np.ndarray]:
+    """
+    Parse header from seismogram file and return source and receiver position.
+    :param filepath: Full filename
+    :return: Tuple of (source_position, receiver_position)
+    """
     with open(filepath, "r") as f:
         # read first 2 lines
-        header = [next(f).rstrip("\n") for _ in range(2)]
-    return header
-
-
-def parse_header(header: List[str]) -> List[np.ndarray]:
-    """Parse header from seismogram file to Vectors of source and receiver
-    position"""
-    vectors = []
+        header: List[str] = [next(f).rstrip("\n") for _ in range(2)]
+    positions = []
     for line in header:
+        # throw away source/receiver, only keep digits
         data = line.split(":")[-1]
         # remove outer square brackets
         data = data[2:-1]
         vec = np.fromstring(data, dtype=float, sep=" ")
-        vectors.append(vec)
-    return vectors
+        positions.append(vec)
+    return positions
 
 
 def load_seismogram(filepath: Path) -> Tuple[np.ndarray, np.ndarray]:
@@ -144,8 +143,7 @@ def load_seismograms(seismograms_path: Path, seismogram_filename_template: str)\
     receiver_positions = []
     seismogram_filenames = seismograms_path.glob(seismogram_filename_template)
     for fname in sorted(seismogram_filenames):
-        header = read_header_from_file(fname)
-        source_pos, receiver_pos = parse_header(header)
+        source_pos, receiver_pos = read_header_from_file(fname)
         receiver_positions.append(receiver_pos)
         times, seismic_data = load_seismogram(fname)
         seismograms.append(seismic_data)
