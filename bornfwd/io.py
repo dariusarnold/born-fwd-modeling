@@ -135,6 +135,9 @@ def load_seismograms(seismograms_path: Path, seismogram_filename_template: str)\
     This loads all seismograms from the path and returns them as well as
     additional information.
     :param seismograms_path: Path to seismogram files
+    :param seismogram_filename_template: String where the numeric part of the
+    filename is replaced by a star. Eg. if the seismograms where saved as
+    receiver_001.txt, receiver_002.txt, ..., pass "receiver_*.txt".
     :return Numpy array consisting of all loaded seismograms, numpy array
     containing the common timesteps for all seismograms, a list of receiver
     positions for these seismograms, and the source position.
@@ -145,9 +148,9 @@ def load_seismograms(seismograms_path: Path, seismogram_filename_template: str)\
     for fname in sorted(seismogram_filenames):
         source_pos, receiver_pos = read_header_from_file(fname)
         receiver_positions.append(receiver_pos)
-        times, seismic_data = load_seismogram(fname)
+        time, seismic_data = load_seismogram(fname)
         seismograms.append(seismic_data)
-    return np.array(seismograms), times, receiver_positions, source_pos
+    return np.array(seismograms), time, receiver_positions, source_pos
 
 
 def save_receiver_file(filepath: Path, receivers: np.ndarray) -> None:
