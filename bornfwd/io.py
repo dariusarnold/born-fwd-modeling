@@ -91,6 +91,9 @@ def create_header(source_pos: np.ndarray, receiver_pos: np.ndarray) -> str:
     arguments used to create it. This information will be saved as a header in
     the seismogram file.
     """
+    # reshape so the output has the expected shape for parsing
+    source_pos = source_pos.reshape(3,)
+    receiver_pos = receiver_pos.reshape(3,)
     h = f"source: {source_pos}\nreceiver: {receiver_pos}"
     return h
 
