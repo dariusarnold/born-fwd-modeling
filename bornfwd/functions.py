@@ -170,9 +170,10 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
         raise ValueError("Shape mismatch for receiver position: Got"
                          f"{receiver_positions.shape}, expected (M, 3).")
 
-    #TODO replace hardcoded paths with command line options
-    output_folder = os.path.join("output", "source_{id:03d}")
-    output_filename = "receiver_{id:03d}.txt"
+    # TODO replace hardcoded paths with command line options
+    source_folder_name = "source_{{id:0{number_of_digits}d}}".format(number_of_digits=source_positions.shape[0])
+    output_folder = os.path.join("output", source_folder_name)
+    output_filename = "receiver_{{id:0{number_of_digits}d}}.txt".format(number_of_digits=receiver_positions.shape[0])
 
     omega_samples = frequency_samples(timeseries_length, sample_period)
     t_samples = time_samples(timeseries_length, sample_period)
