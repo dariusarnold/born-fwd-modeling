@@ -171,9 +171,9 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
                          f"{receiver_positions.shape}, expected (M, 3).")
 
     # TODO replace hardcoded paths with command line options
-    source_folder_name = "source_{{id:0{number_of_digits}d}}".format(number_of_digits=source_positions.shape[0])
+    source_folder_name = "source_{{id:0{number_of_digits}d}}".format(number_of_digits=len(str(source_positions.shape[0])))
     output_folder = os.path.join("output", source_folder_name)
-    output_filename = "receiver_{{id:0{number_of_digits}d}}.txt".format(number_of_digits=receiver_positions.shape[0])
+    output_filename = "receiver_{{id:0{number_of_digits}d}}.txt".format(number_of_digits=len(str(receiver_positions.shape[0])))
 
     omega_samples = frequency_samples(timeseries_length, sample_period)
     t_samples = time_samples(timeseries_length, sample_period)

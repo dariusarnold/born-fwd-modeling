@@ -2,8 +2,9 @@ from pathlib import Path
 
 import numpy as np
 
-from bornfwd.plotting import plot_recording_geometry
 from bornfwd.io import save_receiver_file, save_source_file
+from bornfwd.plotting import plot_recording_geometry
+from bornfwd.utils import RecordingGeometryInfo
 from marcellus import create_velocity_model
 
 """
@@ -21,11 +22,11 @@ def generate_points(start_point: np.ndarray, end_point: np.ndarray,
     return np.vstack((points_x, points_y, points_z)).T
 
 
-def generate_receiver_positions():
+def generate_receiver_positions(geometry_info: RecordingGeometryInfo):
 
     # Coordinates specified in meters
-    num_of_receiver_lines = 13
-    receivers_per_line = 97
+    num_of_receiver_lines = geometry_info.num_of_receiver_lines
+    receivers_per_line = geometry_info.receivers_per_line
     # coordinates of leftmost receiver in Hu2018a fig 4a)
     first_line_start = np.array((3200, 5600, 0))  # left most geophone
     first_line_end = np.array((5400, 3400, 0))  # bottom geophone
@@ -40,10 +41,10 @@ def generate_receiver_positions():
     return receivers
 
 
-def generate_source_positions():
+def generate_source_positions(geometry_info: RecordingGeometryInfo):
     # Coordinates specified in meters
-    num_of_source_lines = 41
-    sources_per_line = 60
+    num_of_source_lines = geometry_info.num_of_source_lines
+    sources_per_line = geometry_info.sources_per_line
     source_depth = 10
     first_line_start = np.array((0, 5200, source_depth))  # left most source
     first_line_end = np.array((5600, 11200, source_depth))  # top source
@@ -57,9 +58,11 @@ def generate_source_positions():
 
 
 if __name__ == '__main__':
-    receivers = generate_receiver_positions()
-    sources = generate_source_positions()
+    geometry_info = RecordingGeometryInfo(num_of_receiver_lines=13, receivers_per_line=100,
+                                          num_of_source_lines=25, sources_per_line=40)
+    receivers = generate_receiver_positions(geometry_info)
+    sources = generate_source_positions(geometry_info)
     vm = create_velocity_model()
-    plot_recording_geometry(sources, receivers, vm)
+    plot_recording_geometry(sources, receivers, vm, geometry_info)
     save_receiver_file(Path("receivers.txt"), receivers)
     save_source_file(Path("sources.txt"), sources)

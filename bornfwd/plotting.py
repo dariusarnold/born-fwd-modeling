@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from bornfwd.utils import RecordingGeometryInfo
 from bornfwd.velocity_model import VelocityModel
 
 
@@ -20,7 +21,7 @@ def plot_fractures(velocity_model: VelocityModel) -> None:
 
 
 def plot_recording_geometry(sources: np.ndarray, receivers: np.ndarray,
-                            velocity_model: VelocityModel) -> None:
+                            velocity_model: VelocityModel, plot_info: RecordingGeometryInfo) -> None:
     """
     Plot recording geometry (positions of sources and receivers)
     :param sources: array of shape (N, 3)
@@ -38,8 +39,10 @@ def plot_recording_geometry(sources: np.ndarray, receivers: np.ndarray,
     plt.scatter(receivers_x, receivers_y, marker="v", color="b", s=2,
                 label="Receivers")
     plt.title("Source/Receiver geometry\n\n"
-              "40 receivers/line, 13 lines = 520 receivers\n"
-              "40 sources/line, 25 lines = 1000 sources")
+              f"{plot_info.receivers_per_line} receivers/line, {plot_info.num_of_receiver_lines} lines "
+              f"= {plot_info.num_of_receiver_lines * plot_info.receivers_per_line} receivers\n"
+              f"{plot_info.sources_per_line} sources/line, {plot_info.num_of_source_lines} lines "
+              f"= {plot_info.num_of_source_lines * plot_info.sources_per_line} sources")
     plt.legend()
     plt.xlabel("x axis (West-East, m)")
     plt.ylabel("y axis (South-North, m)")
