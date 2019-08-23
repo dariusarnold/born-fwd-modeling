@@ -184,7 +184,7 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
         # generate source folder
         fpath = Path(output_folder.format(id=index_source+1))
         fpath.mkdir(parents=True, exist_ok=True)
-        progress_bar = tqdm(receiver_chunks, desc=f"Source {index_source:03d}/{len(source_positions):03d}",
+        progress_bar = tqdm(receiver_chunks, desc=f"Source {index_source+1:03d}/{len(source_positions):03d}",
                             unit="chunk", leave=True)
         for index_chunk, receiver_chunk in enumerate(progress_bar):
             # calculate seismograms
