@@ -1,8 +1,14 @@
 ## Contents
 
-Implement Born modeling to calculate the scattered P wave due to fractures in the
-frequency domain. The method is described in Hu2018a (3D seismic characterization
-of fractures in a dipping layer using the double-beam method, Hao Hu and Yingcai Zheng).
+Use Born modeling to generate seismic recordings from fracture scattered waves.
+The method is described in Hu2018a (3D seismic characterization of fractures in
+a dipping layer using the double-beam method, Hao Hu and Yingcai Zheng).
+
+The program oneshot will generate a seismogram from a single source, recorded at a single
+receiver location.
+
+The program fullmodel will generate seismograms for one or more sources recorded at one
+or more receivers.
 
 ## Options
 
@@ -36,7 +42,7 @@ The file name of the options file is arbitrary.
 
 Source files contain the position for all sources in the model.
 
-### Formatting
+### Source file formatting
 
 The number of sources needs to be specified as `nsrc = N`, where `N` is an
 integer. `nsrc` specifies how many sources will be defined in the file.
@@ -62,7 +68,7 @@ amount of whitespace before and after the line.
 The stations file contains the positions of all the receivers in the model. For
 a single shot, a seismogram will be generated for every receiver.
 
-### Formatting
+### Stations file formatting
 
 Example:
 ```
@@ -77,4 +83,4 @@ Example:
 The first line contains the number of receivers defined in the file. Every
 following is preceded by a running index. The three numbers following it define
 one receiver position. Their order is x, y, z coordinates of the receiver
-position in m. The seperator for values is whitespace.
+position in m. The separator for values is whitespace.
