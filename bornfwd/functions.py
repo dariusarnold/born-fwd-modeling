@@ -5,6 +5,7 @@ from typing import Tuple
 
 import numpy as np
 import quadpy
+import numexpr
 from tqdm import tqdm
 
 from bornfwd.io import save_seismogram, create_header
@@ -52,22 +53,9 @@ def _born(xs: np.ndarray, xr: np.ndarray,
 
     def complex_exp(exp_term: np.array) -> np.array:
         """
-        Calculate complex exp by Eulers formula using cos(x) + i sin(x).
-        Interestingly in numpy a complex exp takes more time to compute than the
-        expanded version from eulers formula, see:
-        https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148
-        This version is taken from above link and is even faster than a simple
-        cos+isin since you avoid intermediate temporary arrays and needless
-        copying.
-        :param exp_term: The argument of the complex exp without imaginary i
-        :return: Numpy array of complex values
+        Calculate exp using numexpr
         """
-        df_exp = np.empty(exp_term.shape, dtype=np.csingle)
-        trig_buf = np.cos(exp_term)
-        df_exp.real[:] = trig_buf
-        np.sin(exp_term, out=trig_buf)
-        df_exp.imag[:] = trig_buf
-        return df_exp
+        return numexpr.evaluate("exp(exp_term)")
 
     def greens_function_vectorized(x: np.array, x_prime: np.array) -> np.array:
         """
@@ -80,7 +68,7 @@ def _born(xs: np.ndarray, xr: np.ndarray,
                                     optimize=True))
         # minus sign in exp term is required since it was exp(-ix) before, which
         # transforms to cos(-x) + i * sin(-x)
-        return complex_exp(-omega[None, :, None, None] * (1. / bg_vel)
+        return complex_exp(-omega[None, :, None, None] * (1j / bg_vel)
                            * lengths[:, None, ...]) / lengths[:, None, ...]
 
     def integral(x):
