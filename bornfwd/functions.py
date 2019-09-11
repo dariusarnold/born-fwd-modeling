@@ -5,6 +5,7 @@ from typing import Tuple
 
 import numpy as np
 import quadpy
+import numexpr
 from tqdm import tqdm
 
 from bornfwd.io import save_seismogram, create_header
@@ -49,26 +50,6 @@ def _born(xs: np.ndarray, xr: np.ndarray,
     points. If M receiver positions were specified, the returned array will be
     of shape (M, K).
     """
-
-    def complex_exp(exp_term: np.array) -> np.array:
-        """
-        Calculate complex exp by Eulers formula using cos(x) + i sin(x).
-        Interestingly in numpy a complex exp takes more time to compute than the
-        expanded version from eulers formula, see:
-        https://software.intel.com/en-us/forums/intel-distribution-for-python/topic/758148
-        This version is taken from above link and is even faster than a simple
-        cos+isin since you avoid intermediate temporary arrays and needless
-        copying.
-        :param exp_term: The argument of the complex exp without imaginary i
-        :return: Numpy array of complex values
-        """
-        df_exp = np.empty(exp_term.shape, dtype=np.csingle)
-        trig_buf = np.cos(exp_term)
-        df_exp.real[:] = trig_buf
-        np.sin(exp_term, out=trig_buf)
-        df_exp.imag[:] = trig_buf
-        return df_exp
-
     def greens_function_vectorized(x: np.array, x_prime: np.array) -> np.array:
         """
         Vectorized version (over the frequencies in omega) of the greens
@@ -78,10 +59,12 @@ def _born(xs: np.ndarray, xr: np.ndarray,
         subtraction = x - x_prime
         lengths = np.sqrt(np.einsum("ijkl, ijkl -> jkl", subtraction, subtraction,
                                     optimize=True))
-        # minus sign in exp term is required since it was exp(-ix) before, which
-        # transforms to cos(-x) + i * sin(-x)
-        return complex_exp(-omega[None, :, None, None] * (1. / bg_vel)
-                           * lengths[:, None, ...]) / lengths[:, None, ...]
+        # capture variables in closure since I can't find a way to access them
+        # in the numexpr expression otherwise
+        bg_vel_ = bg_vel
+        omega_ = omega[None, :, None, None]
+        lengths_ = lengths[:, None, ...]
+        return numexpr.evaluate("exp(-omega_ * (1j / bg_vel_) * lengths_) / lengths_")
 
     def integral(x):
         """
@@ -97,7 +80,7 @@ def _born(xs: np.ndarray, xr: np.ndarray,
         # broadcasting to work.
         G0_left = greens_function_vectorized(xs[..., None, None], x[:, None, ...])
         G0_right = greens_function_vectorized(x[:, None, ...], xr[..., None, None])
-        return G0_left * G0_right
+        return numexpr.evaluate("G0_left * G0_right")
 
     frac_vel = velocity_model.fracture_velocity
     bg_vel = velocity_model.background_velocity
