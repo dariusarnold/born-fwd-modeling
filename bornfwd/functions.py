@@ -50,13 +50,6 @@ def _born(xs: np.ndarray, xr: np.ndarray,
     points. If M receiver positions were specified, the returned array will be
     of shape (M, K).
     """
-
-    def complex_exp(exp_term: np.array) -> np.array:
-        """
-        Calculate exp using numexpr
-        """
-        return numexpr.evaluate("exp(exp_term)")
-
     def greens_function_vectorized(x: np.array, x_prime: np.array) -> np.array:
         """
         Vectorized version (over the frequencies in omega) of the greens
@@ -66,10 +59,12 @@ def _born(xs: np.ndarray, xr: np.ndarray,
         subtraction = x - x_prime
         lengths = np.sqrt(np.einsum("ijkl, ijkl -> jkl", subtraction, subtraction,
                                     optimize=True))
-        # minus sign in exp term is required since it was exp(-ix) before, which
-        # transforms to cos(-x) + i * sin(-x)
-        return complex_exp(-omega[None, :, None, None] * (1j / bg_vel)
-                           * lengths[:, None, ...]) / lengths[:, None, ...]
+        # capture variables in closure since I can't find a way to access them
+        # in the numexpr expression otherwise
+        bg_vel_ = bg_vel
+        omega_ = omega[None, :, None, None]
+        lengths_ = lengths[:, None, ...]
+        return numexpr.evaluate("exp(-omega_ * (1j / bg_vel_) * lengths_) / lengths_")
 
     def integral(x):
         """
@@ -85,7 +80,7 @@ def _born(xs: np.ndarray, xr: np.ndarray,
         # broadcasting to work.
         G0_left = greens_function_vectorized(xs[..., None, None], x[:, None, ...])
         G0_right = greens_function_vectorized(x[:, None, ...], xr[..., None, None])
-        return G0_left * G0_right
+        return numexpr.evaluate("G0_left * G0_right")
 
     frac_vel = velocity_model.fracture_velocity
     bg_vel = velocity_model.background_velocity
