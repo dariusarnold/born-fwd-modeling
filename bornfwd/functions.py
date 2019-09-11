@@ -13,22 +13,6 @@ from bornfwd.units import Hertz, RadiansPerSecond, Seconds
 from bornfwd.velocity_model import AbstractVelocityModel
 
 
-def set_number_numpy_threads(threads: int):
-    """
-    Set number of threads numpy will use for parallel processing.
-    This has to be called before numpy is imported!
-    """
-    if threads <= 0:
-        # this will leave the default value unchanged
-        return
-    threads = str(threads)
-    os.environ["MKL_NUM_THREADS"] = threads
-    os.environ["NUMEXPR_NUM_THREADS"] = threads
-    os.environ["OMP_NUM_THREADS"] = threads
-# TODO handle this
-#set_number_numpy_threads(1)
-
-
 def _born(xs: np.ndarray, xr: np.ndarray,
           velocity_model: AbstractVelocityModel,
           omega: np.ndarray,

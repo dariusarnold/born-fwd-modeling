@@ -1,3 +1,4 @@
+import numexpr
 import argparse
 import importlib
 from pathlib import Path
@@ -73,9 +74,8 @@ def _setup_parser() -> argparse.ArgumentParser:
                    help="Length of output time series (s) and sample rate (s).",
                    action=AddNargsAsAttributesAction,
                    dest="timeseries_length sample_period")
-    # TODO implement handling this
-    p.add_argument("-c", "--cores", type=int, help=("Number of cores for "
-                   "parallelization. If not specified, numpys default value "
+    p.add_argument("-c", "--cores", type=int, help=("Number of threads for "
+                   "parallelization. If not specified, numexprs default value "
                    "will be kept."))
     p.add_argument("-m", "--model", type=velocity_model, default="marcellus.py",
                    help=("Specify file from which the velocity model is created."
@@ -150,6 +150,8 @@ def main() -> None:
     """
     parser = _setup_parser()
     args = parser.parse_args()
+    if args.cores:
+        numexpr.set_num_threads(args.cores)
     args.func(args)
 
 
