@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
-from quadpy.ball import integrate, Stroud
+import quadpy
 from tqdm import tqdm
 
 from bornfwd.io import save_seismogram, create_header
@@ -104,13 +104,13 @@ def _born(xs: np.ndarray, xr: np.ndarray,
     epsilon = scattering_potential(frac_vel, bg_vel)
     scatterer_radii = np.full(len(velocity_model.scatterer_positions),
                               velocity_model.scatterer_radius, dtype=np.float32)
-    integration_scheme = Stroud("S3 3-1")
+    scheme = quadpy.ball.stroud_3_1()
     # hack to compute everything with 32 bit floats
-    integration_scheme.points = integration_scheme.points.astype(np.float32)
-    integration_scheme.weights = integration_scheme.weights.astype(np.float32)
-    res = integrate(integral, velocity_model.scatterer_positions,
-                    scatterer_radii, integration_scheme,
-                    dot=lambda x, y: np.einsum("ijkl, l", x, y, optimize=True))
+    scheme.points = scheme.points.astype(np.float32)
+    scheme.weights = scheme.weights.astype(np.float32)
+    res = scheme.integrate(integral, velocity_model.scatterer_positions,
+                           scatterer_radii,
+                           dot=lambda x, y: np.einsum("ijkl, l", x, y, optimize=True))
     # sum over the result from all scatterer points
     res = np.sum(res, axis=-1)
     res *= ricker_frequency_domain(omega, omega_central) * omega**2 * epsilon
