@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 from bornfwd.utils import RecordingGeometryInfo
@@ -50,6 +51,36 @@ def plot_recording_geometry(sources: np.ndarray, receivers: np.ndarray,
     plt.ylim((0, 11200))
     plt.axis("equal")
     plt.tight_layout()
+    plt.show()
+
+
+def plot_recording_geometry_3D(sources: np.ndarray, receivers: np.ndarray,
+                               velocity_model: VelocityModel, plot_info: RecordingGeometryInfo,
+                               three_dimensional: bool = False) -> None:
+    """
+    Plot recording geometry (positions of sources and receivers)
+    :param sources: array of shape (N, 3)
+    :param receivers: array of shape (M, 3)
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(*velocity_model.scatterer_positions.T, marker="_", c="green", s=1, label="Scatterers")
+    ax.scatter(*sources.T, marker="*", color="orange", s=2,
+               label="Sources")
+    ax.scatter(*receivers.T, marker="v", color="b", s=2,
+               label="Receivers")
+    ax.set_title("Source/Receiver geometry\n\n"
+                 f"{plot_info.receivers_per_line} receivers/line, {plot_info.num_of_receiver_lines} lines "
+                 f"= {plot_info.num_of_receiver_lines * plot_info.receivers_per_line} receivers\n"
+                 f"{plot_info.sources_per_line} sources/line, {plot_info.num_of_source_lines} lines "
+                 f"= {plot_info.num_of_source_lines * plot_info.sources_per_line} sources")
+    ax.legend()
+    ax.set_xlabel("x axis (West-East, m)")
+    ax.set_ylabel("y axis (South-North, m)")
+    ax.set_xlim((0, 11200))
+    ax.set_ylim((0, 11200))
+    ax.invert_zaxis()
+    fig.tight_layout()
     plt.show()
 
 
