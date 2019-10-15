@@ -56,7 +56,7 @@ class VelocityModel(AbstractVelocityModel):
         """
         Velocity model with a homogeneous background velocity that represents
         fractures as a collection of close scatterer points with a spherical
-        velocity heterogenity around them. For documentation of the required
+        velocity heterogeneity around them. For documentation of the required
         parameters, see the AbstractVelocityModel class.
         A new velocity model has to derive from AbstractVelocityModel, this then
         checks if the necessary attributes for born modeling are defined.
