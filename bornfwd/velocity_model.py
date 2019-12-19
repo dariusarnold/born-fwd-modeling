@@ -1,6 +1,4 @@
 import abc
-import itertools
-from typing import Tuple, Iterator
 
 import numpy as np
 

@@ -8,7 +8,6 @@ import numpy as np
 from bornfwd.functions import angular, born_multi, born_single
 from bornfwd.io import save_seismogram, create_header, read_stations, read_sources
 from bornfwd.plotting import plot_time_series
-from bornfwd.units import Hertz
 from bornfwd.velocity_model import VelocityModel, AbstractVelocityModel
 
 
