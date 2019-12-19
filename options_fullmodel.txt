@@ -3,6 +3,8 @@
 0.004
 -a
 1e10
+-w
+30
 fullmodel
 -s
 sample_sourcefile

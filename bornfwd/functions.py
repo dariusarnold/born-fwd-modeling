@@ -176,7 +176,7 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
 
 
 def angular(f: Hertz) -> RadiansPerSecond:
-    return RadiansPerSecond(2. * math.pi * f)
+    return RadiansPerSecond(2. * math.pi * float(f))
 
 
 def frequency_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.ndarray:

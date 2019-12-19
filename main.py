@@ -66,8 +66,7 @@ def _setup_parser() -> argparse.ArgumentParser:
                                 fromfile_prefix_chars="@")
 
     # add general options valid for both commands
-    p.add_argument("-w", "--omega_central", type=angular,
-                   metavar="HZ", default=angular(Hertz(30.)),
+    p.add_argument("-w", "--omega_central", type=angular, metavar="HZ",
                    help="Central frequency of Ricker source wavelet in Hz")
     p.add_argument("-a", "--amplitude", type=float,
                    help="Amplitude of the Ricker source wavelet in the frequency"
