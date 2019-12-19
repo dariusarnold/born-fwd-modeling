@@ -1,6 +1,8 @@
 -t
 4
 0.004
+-a
+1e10
 fullmodel
 -s
 sample_sourcefile

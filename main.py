@@ -69,6 +69,9 @@ def _setup_parser() -> argparse.ArgumentParser:
     p.add_argument("-w", "--omega_central", type=angular,
                    metavar="HZ", default=angular(Hertz(30.)),
                    help="Central frequency of Ricker source wavelet in Hz")
+    p.add_argument("-a", "--amplitude", type=float,
+                   help="Amplitude of the Ricker source wavelet in the frequency"
+                        " domain.")
     p.add_argument("-t", "--time", nargs=2, type=float,
                    metavar=("LENGTH", "SAMPLEPERIOD"),
                    help="Length of output time series (s) and sample rate (s).",
@@ -161,8 +164,8 @@ def oneshot(args) -> None:
     """
 
     seismogram = born_single(args.source_pos, args.receiver_pos, args.model,
-                             args.omega_central, args.timeseries_length,
-                             args.sample_period)
+                             args.omega_central, args.amplitude,
+                             args.timeseries_length, args.sample_period)
     header = create_header(args.source_pos, args.receiver_pos)
     t_samples, seismogram = seismogram
     if args.plot is True:
@@ -177,7 +180,7 @@ def fullmodel(args) -> None:
     """
     receivers = read_stations(Path(args.receiverfile))
     sources = read_sources(Path(args.sourcefile))
-    born_multi(sources, receivers, args.model, args.omega_central,
+    born_multi(sources, receivers, args.model, args.omega_central, args.amplitude,
                args.timeseries_length, args.sample_period, args.chunksize)
 
 

@@ -13,10 +13,9 @@ from bornfwd.units import Hertz, RadiansPerSecond, Seconds
 from bornfwd.velocity_model import AbstractVelocityModel
 
 
-def _born(xs: np.ndarray, xr: np.ndarray,
-          velocity_model: AbstractVelocityModel,
-          omega: np.ndarray,
-          omega_central: RadiansPerSecond) -> np.ndarray:
+def _born(xs: np.ndarray, xr: np.ndarray, velocity_model: AbstractVelocityModel,
+          omega: np.ndarray, omega_central: RadiansPerSecond,
+          ricker_amplitude: float) -> np.ndarray:
     """
     Calculate born scattering for all scatterers over a range of frequencies.
     This implements eq. (1) from
@@ -30,6 +29,8 @@ def _born(xs: np.ndarray, xr: np.ndarray,
     :param omega: Angular frequencies in (K,) array where K is the number of
     samples.
     :param omega_central: Central frequency of ricker source wavelet.
+    :param ricker_amplitude: Amplitude of the Ricker source wavelet in the
+    frequency domain.
     :return: Frequency spectrum of the scattered P wave for all omega sample
     points. If M receiver positions were specified, the returned array will be
     of shape (M, K).
@@ -80,14 +81,16 @@ def _born(xs: np.ndarray, xr: np.ndarray,
                            dot=lambda x, y: np.einsum("ijkl, l", x, y, optimize=True))
     # sum over the result from all scatterer points
     res = np.sum(res, axis=-1)
-    res *= ricker_frequency_domain(omega, omega_central) * omega**2 * epsilon
+    res *= ricker_frequency_domain(omega, omega_central, ricker_amplitude) \
+           * omega**2 * epsilon
     res *= 1 / (4. * np.pi * velocity_model.density * bg_vel**2)
     return res
 
 
 def born_single(source_position: np.ndarray, receiver_position: np.ndarray,
                 velocity_model: AbstractVelocityModel,
-                omega_central: RadiansPerSecond, timeseries_length: Seconds,
+                omega_central: RadiansPerSecond, ricker_amplitude: float,
+                timeseries_length: Seconds,
                 sample_period: Seconds) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generate seismogram for shot and receiver position.
@@ -95,6 +98,8 @@ def born_single(source_position: np.ndarray, receiver_position: np.ndarray,
     :param receiver_position: (x y z) coordinates of receivers
     :param velocity_model: VelocityModel instance
     :param omega_central: Central frequency of Ricker source wavelet
+    :param ricker_amplitude: Amplitude of the Ricker source wavelet in the
+    frequency domain.
     :param timeseries_length: Desired length of seismograms in seconds
     :param sample_period: Desired samplerate of seismograms in seconds
     :return: Tuple of two arrays: First array is timesteps where the seismogram
@@ -104,14 +109,15 @@ def born_single(source_position: np.ndarray, receiver_position: np.ndarray,
     t_samples = time_samples(timeseries_length, sample_period)
     u_scattering = _born(source_position.reshape(3, 1),
                          receiver_position.reshape(3, 1), velocity_model,
-                         omega_samples, omega_central)
+                         omega_samples, omega_central, ricker_amplitude)
     time_domain = np.real(np.fft.ifft(np.squeeze(u_scattering)))
     return t_samples, time_domain
 
 
 def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
                velocity_model: AbstractVelocityModel, omega_central: RadiansPerSecond,
-               timeseries_length: Seconds, sample_period: Seconds, chunksize: int) -> None:
+                ricker_amplitude: float, timeseries_length: Seconds,
+               sample_period: Seconds, chunksize: int) -> None:
     """
     Generate scattered P wave for multiple source/receiver locations and save
     them as files.
@@ -121,6 +127,8 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
     :param velocity_model: Velocity model instance containing scatterer positions
     and other data.
     :param omega_central: Central frequency for Ricker source wavelet
+    :param ricker_amplitude: Amplitude of Ricker source wavelet in frequency
+    domain.
     :param timeseries_length: Desired length of seismograms in seconds
     :param sample_period: Desired samplerate of seismograms in seconds
     :param chunksize: Number of receivers for which seismograms are calculated
@@ -157,7 +165,7 @@ def born_multi(source_positions: np.ndarray, receiver_positions: np.ndarray,
             # calculate seismograms
             u_scattering = _born(source_position, receiver_chunk.T,
                                  velocity_model, omega_samples,
-                                 omega_central)
+                                 omega_central, ricker_amplitude)
             u_scattering = np.real(np.fft.ifft(u_scattering, axis=-1))
             # save seismograms
             for seismogram_index, seismogram in enumerate(u_scattering):
@@ -192,14 +200,15 @@ def time_samples(timeseries_length: Seconds, sample_period: Seconds) -> np.ndarr
     return np.linspace(0, timeseries_length, num_of_samples)
 
 
-def ricker_frequency_domain(omega: np.ndarray, omega_central: float) -> np.ndarray:
+def ricker_frequency_domain(omega: np.ndarray, omega_central: float,
+                            amplitude: float) -> np.ndarray:
     """
     Taken from Frequencies of the Ricker wavelet by Yanghua Wang (eq. 7)
     :param omega: Frequency at which to evaluate the spectrum
     :param omega_central: Central or dominant frequency
     :return: Value of frequency spectrum of a Ricker wavelet
     """
-    return 2 * omega**2 / (math.sqrt(math.pi) * omega_central**3) \
+    return amplitude * 2 * omega**2 / (math.sqrt(math.pi) * omega_central**3) \
         * np.exp(- omega**2 / omega_central**2)
 
 
