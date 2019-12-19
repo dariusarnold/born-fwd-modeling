@@ -10,6 +10,33 @@ receiver location.
 The program fullmodel will generate seismograms for one or more sources recorded at one
 or more receivers.
 
+## Requirements
+
+ - Python 3.6+
+ - numpy
+ - quadpy
+ - numexpr
+ - tqdm
+ - matplotlib
+
+## How to start a simulation
+
+To generate a full data set for a number of sources and receivers run `main.py fullmodel`:
+
+ - Create a source file in which all source positions are specified.
+ - Create a stations file in which all receiver positions are specified.
+ - Create a velocity model file. This file should contain a function called
+   create_velocity_model which returns a VelocityModel object. The velocity model
+   provides the scatterer positions in a (N, 3) shape array. Scatterers are
+   discrete points used to model fractures. A vertical fracture plane is
+   represented by a dense row of scatterers along its top.
+   An example script that does all of the above is located in `simple_model.py`. When run, this file will create a source file named `simple_sources.txt` and a stations file called `simple_receivers.txt`. It also contains a function to create the velocity model, so it can be passed to `main.py` as the model argument.
+ - Decide on good values for the general required parameters: source wavelet frequency, (`--omega_central`), source amplitude (`--amplitude`),
+   seismogram time (`--time`). An explanation of the parameters is provided when specifying the `-h/--help` flag.
+ - Call `main.py fullmodel` with specifying the path to the model file, the source and receiver file.
+   Specify the general parameters after main and the fullmodel parameters (source and receiver file) after fullmodel.
+ - The output of the simulation will be saved in a directory called `output`, which is automatically created.
+
 ## Options
 
 Available options and their explanation can be seen by calling the script main.py
