@@ -41,7 +41,7 @@ To generate a full data set for a number of sources and receivers run `main.py f
 
 Shotgather made from 100 traces in the `marcellus.py` model:
 
-![Image of a Shotgather](https://raw.githubusercontent.com/dariusarnold/born-fwd-modeling/images/shotgather.png)
+![Image of a Shotgather](images/shotgather.png)
 
 
 ## Options
