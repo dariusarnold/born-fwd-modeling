@@ -29,7 +29,7 @@ To generate a full data set for a number of sources and receivers run `main.py f
    create_velocity_model which returns a VelocityModel object. The velocity model
    provides the scatterer positions in a (N, 3) shape array. Scatterers are
    discrete points used to model fractures. A vertical fracture plane is
-   represented by a dense row of scatterers along its top.
+   represented by a dense row of scatterers along its top.  
    An example script that does all of the above is located in `simple_model.py`. When run, this file will create a source file named `simple_sources.txt` and a stations file called `simple_receivers.txt`. It also contains a function to create the velocity model, so it can be passed to `main.py` as the model argument.
  - Decide on good values for the general required parameters: source wavelet frequency, (`--omega_central`), source amplitude (`--amplitude`),
    seismogram time (`--time`). An explanation of the parameters is provided when specifying the `-h/--help` flag.
