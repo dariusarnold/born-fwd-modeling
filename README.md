@@ -37,6 +37,13 @@ To generate a full data set for a number of sources and receivers run `main.py f
    Specify the general parameters after main and the fullmodel parameters (source and receiver file) after fullmodel.
  - The output of the simulation will be saved in a directory called `output`, which is automatically created.
 
+## Example output
+
+Shotgather made from 100 traces in the `marcellus.py` model:
+
+![Image of a Shotgather](https://raw.githubusercontent.com/dariusarnold/born-fwd-modeling/images/shotgather.png)
+
+
 ## Options
 
 Available options and their explanation can be seen by calling the script main.py
