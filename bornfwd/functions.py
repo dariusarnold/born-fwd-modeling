@@ -83,6 +83,8 @@ def _born(xs: np.ndarray, xr: np.ndarray, velocity_model: AbstractVelocityModel,
     res = np.sum(res, axis=-1)
     res *= ricker_frequency_domain(omega, omega_central, ricker_amplitude) \
            * omega**2 * epsilon
+    # multiply by constant factor pulled from Greens function so only
+    # one multiplication is done per frequency bin.
     res *= 1 / (4. * np.pi * velocity_model.density * bg_vel**2)
     return res
 
