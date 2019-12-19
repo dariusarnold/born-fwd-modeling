@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.colors as mcolors
 import numpy as np
 
 from bornfwd.utils import RecordingGeometryInfo
@@ -8,8 +9,8 @@ from bornfwd.velocity_model import VelocityModel
 
 def plot_fractures(velocity_model: VelocityModel) -> None:
     """Plot the fractures (scatterer points) in the VelocityModel"""
-    x = list(point.x for point in velocity_model.scatterer_positions)
-    y = list(point.y for point in velocity_model.scatterer_positions)
+    x = velocity_model.scatterer_positions.T[0]
+    y = velocity_model.scatterer_positions.T[1]
     plt.scatter(x, y, marker=",", c="g", s=1)
     plt.title("Scatterer points in model")
     plt.xlabel("x axis (West-East, m)")
@@ -93,11 +94,31 @@ def plot_time_series(data: np.ndarray, timesteps: np.ndarray,
     plt.xlabel(f"t ({time_unit})")
     plt.show()
 
+def make_colormap(seq):
+    """
+    Return a LinearSegmentedColormap
+    seq: a sequence of floats and RGB-tuples. The floats should be increasing
+    and in the interval (0,1).
+    """
+    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+    cdict = {'red': [], 'green': [], 'blue': []}
+    for i, item in enumerate(seq):
+        if isinstance(item, float):
+            r1, g1, b1 = seq[i - 1]
+            r2, g2, b2 = seq[i + 1]
+            cdict['red'].append([item, r1, r2])
+            cdict['green'].append([item, g1, g2])
+            cdict['blue'].append([item, b1, b2])
+    return mcolors.LinearSegmentedColormap('CustomMap', cdict)
 
 def plot_seismogram_gather(seismograms: np.ndarray) -> None:
     """Plot all seismograms from a shot to recreate fig 5b) from Hu2018a"""
     fig, ax = plt.subplots(figsize=(8,6), dpi=244)
-    plot = ax.pcolormesh(seismograms[480:,...].T, cmap="RdGy_r", antialiased=True)
+
+    c = mcolors.ColorConverter().to_rgb
+    rvn = make_colormap([c("black"), c("white"), 0.49, c("white"), 0.51, c("white"), c("red")])
+
+    plot = ax.pcolormesh(seismograms[480:,...].T, cmap=rvn, antialiased=True)
     cb = fig.colorbar(plot)
     cb.set_label("Amplitude")
     # invert y axis so origin is in top left
