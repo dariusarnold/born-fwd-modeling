@@ -182,7 +182,8 @@ def save_source_file(filepath: Path, sources: np.ndarray) -> None:
     """
     with filepath.open("w") as f:
         f.write(f"nsrc = {len(sources)}\n")
-        for source_position in sources:
-            f.write(f"xsource = {source_position[0]}\n"
+        for source_index, source_position in enumerate(sources):
+            f.write(f"source = {source_index + 1}\n"
+                    f"xsource = {source_position[0]}\n"
                     f"ysource = {source_position[1]}\n"
                     f"zsource = {source_position[2]}\n\n")
