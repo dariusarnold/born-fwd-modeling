@@ -98,7 +98,6 @@ def create_header(source_pos: np.ndarray, receiver_pos: np.ndarray) -> str:
     return h
 
 
-
 def read_header_from_file(filepath: Path) -> List[np.ndarray]:
     """
     Parse header from seismogram file and return source and receiver position.
@@ -128,7 +127,7 @@ def load_seismogram(filepath: Path) -> Tuple[np.ndarray, np.ndarray]:
     return times, seismic_data
 
 
-def load_seismograms(seismograms_path: Path, seismogram_filename_template: str)\
+def load_seismograms(seismograms_path: Path, seismogram_filename_template: str) \
         -> Tuple[np.ndarray, np.ndarray, List[np.ndarray], np.ndarray]:
     """
     Load seismograms from the given path.
@@ -162,7 +161,7 @@ def save_receiver_file(filepath: Path, receivers: np.ndarray) -> None:
     # header contains number of receiver positions
     header = str(len(receivers))
     # indices start at 1
-    indices = np.array(range(1, len(receivers)+1))
+    indices = np.array(range(1, len(receivers) + 1))
     # reshape to the same dimension as receivers so hstack works
     indices = indices.reshape(len(receivers), 1)
     # append indices to the left
