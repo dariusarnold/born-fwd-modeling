@@ -67,7 +67,7 @@ def _setup_parser() -> argparse.ArgumentParser:
     # add general options valid for both commands
     p.add_argument("-w", "--omega_central", type=angular, metavar="HZ",
                    help="Central frequency of Ricker source wavelet in Hz")
-    p.add_argument("-a", "--amplitude", type=float,
+    p.add_argument("-a", "--amplitude", type=float, default=1,
                    help="Amplitude of the Ricker source wavelet in the frequency"
                         " domain.")
     p.add_argument("-t", "--time", nargs=2, type=float,
