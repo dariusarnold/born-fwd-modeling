@@ -70,10 +70,10 @@ def plot_recording_geometry_3D(sources: np.ndarray, receivers: np.ndarray,
     :param sources: array of shape (N, 3)
     :param receivers: array of shape (M, 3)
     """
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(*velocity_model.scatterer_positions.T, marker="_", c="green", s=1, label="Scatterers")
-    ax.scatter(*sources.T, marker="*", color="orange", s=2,
+    ax.scatter(*velocity_model.scatterer_positions.T, marker="_", c="k", s=1, label="Scatterers")
+    ax.scatter(*sources.T, marker="*", color="r", s=2,
                label="Sources")
     ax.scatter(*receivers.T, marker="v", color="b", s=2,
                label="Receivers")
@@ -82,7 +82,10 @@ def plot_recording_geometry_3D(sources: np.ndarray, receivers: np.ndarray,
                  f"= {plot_info.num_of_receiver_lines * plot_info.receivers_per_line} receivers\n"
                  f"{plot_info.sources_per_line} sources/line, {plot_info.num_of_source_lines} lines "
                  f"= {plot_info.num_of_source_lines * plot_info.sources_per_line} sources")
-    ax.legend()
+    # change markersize for all legend items
+    legend = ax.legend()
+    for item in legend.legendHandles:
+        item._sizes = [30]
     ax.set_xlabel("x axis (West-East, m)")
     ax.set_ylabel("y axis (South-North, m)")
     ax.set_xlim((0, 11200))
@@ -145,4 +148,5 @@ def plot_seismogram_gather(seismograms: np.ndarray) -> None:
     ax.set_xlabel("Trace #")
     ax.set_ylabel("Time (s)")
     #plt.show()
+    plt.tight_layout()
     plt.savefig("shot_gather.png", dpi=300)
