@@ -35,8 +35,11 @@ def plot_recording_geometry(sources: np.ndarray, receivers: np.ndarray,
     receivers_y = receivers.T[1]
     scatterers_x = velocity_model.scatterer_positions.T[0]
     scatterers_y = velocity_model.scatterer_positions.T[1]
-    plt.scatter(scatterers_x, scatterers_y, marker="_", c="silver", s=1, label="Scatterers")
-    plt.scatter(sources_x, sources_y, marker="*", color="orange", s=2,
+    plt.rcParams["font.size"] = 12
+    plt.figure(figsize=(8, 8))
+    plt.grid()
+    plt.scatter(scatterers_x, scatterers_y, marker="_", c="dimgray", s=1, label="Scatterers")
+    plt.scatter(sources_x, sources_y, marker="*", color="r", s=2,
                 label="Sources")
     plt.scatter(receivers_x, receivers_y, marker="v", color="b", s=2,
                 label="Receivers")
@@ -45,12 +48,16 @@ def plot_recording_geometry(sources: np.ndarray, receivers: np.ndarray,
               f"= {plot_info.num_of_receiver_lines * plot_info.receivers_per_line} receivers\n"
               f"{plot_info.sources_per_line} sources/line, {plot_info.num_of_source_lines} lines "
               f"= {plot_info.num_of_source_lines * plot_info.sources_per_line} sources")
-    plt.legend()
+    legend = plt.legend()
+    # change markersize for all legend items
+    for item in legend.legendHandles:
+        item._sizes = [30]
     plt.xlabel("x axis (West-East, m)")
     plt.ylabel("y axis (South-North, m)")
+    plt.axis("equal")
+
     plt.xlim((0, 11200))
     plt.ylim((0, 11200))
-    plt.axis("equal")
     plt.tight_layout()
     plt.show()
 
