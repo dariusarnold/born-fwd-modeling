@@ -36,5 +36,5 @@ def generate_seismograms():
 
 if __name__ == '__main__':
     #generate_seismograms()
-    seismos, *_ = load_seismograms(Path("/home/darius/masterarbeit/output_0degrees/shotdata/source_001"), "receiver_*.txt")
+    seismos, *_ = load_seismograms(Path("/home/darius/masterarbeit/output_0degrees/shotdata/source_999"), "receiver_*.txt")
     plot_seismogram_gather(seismos)
