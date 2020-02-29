@@ -125,7 +125,7 @@ def plot_seismogram_gather(seismograms: np.ndarray) -> None:
     c = mcolors.ColorConverter().to_rgb
     rvn = make_colormap([c("black"), c("white"), 0.49, c("white"), 0.51, c("white"), c("red")])
 
-    plot = ax.pcolormesh(seismograms[480:,...].T, cmap=rvn, antialiased=True)
+    plot = ax.pcolormesh(np.flip(seismograms[0:40,...].T, 1), cmap=rvn, antialiased=True, vmin=-4e-14, vmax=4e-14)
     cb = fig.colorbar(plot)
     cb.set_label("Amplitude")
     # invert y axis so origin is in top left
